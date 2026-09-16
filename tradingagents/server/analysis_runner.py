@@ -391,9 +391,10 @@ class AnalysisRunnerManager:
 
     @staticmethod
     def _synthesize_decision(quote, tech, fund, sent, bull, bear, risk) -> Dict[str, Any]:
-        """Synthesizes the final AI research signal based on multi-agent consensus."""
+        """Synthesizes the final AI research signal and actionable execution direction based on multi-agent consensus."""
         tech_bias = tech.overall_bias
         sent_label = sent.label
+        price = quote.price or 0.0
 
         score = 0
         if tech_bias == "BULLISH":
@@ -413,29 +414,134 @@ class AnalysisRunnerManager:
         pe = fund.key_ratios.get("pe_ratio_trailing")
         if pe and pe > 50:
             score -= 1
+        elif pe and 0 < pe < 25:
+            score += 1
 
-        if score >= 2:
+        # Check technical alignment with 200 SMA and RSI
+        sma200 = tech.indicators.get("sma_200")
+        rsi = tech.indicators.get("rsi_14")
+        if sma200 and price > sma200:
+            score += 1
+        elif sma200 and price < sma200:
+            score -= 1
+
+        if rsi and rsi < 35:
+            # Oversold bounce potential
+            score += 1
+        elif rsi and rsi > 75:
+            # Overbought risk
+            score -= 1
+
+        # Clear signal and conviction
+        if score >= 3:
+            signal = "STRONG BUY"
+            conviction = min(92, 75 + score * 4)
+        elif score >= 1:
             signal = "BUY BIAS"
-        elif score <= -2:
+            conviction = min(82, 65 + score * 5)
+        elif score <= -3:
+            signal = "STRONG SELL"
+            conviction = min(90, 75 + abs(score) * 4)
+        elif score <= -1:
             signal = "SELL BIAS"
+            conviction = min(80, 65 + abs(score) * 5)
         else:
-            signal = "HOLD BIAS"
+            signal = "HOLD / NEUTRAL"
+            conviction = 55
+
+        atr = tech.indicators.get("atr_14") or (price * 0.02)
+        classic_pivots = tech.indicators.get("pivot_points_classic", {})
+        fib_pivots = tech.indicators.get("pivot_points_fibonacci", {})
+
+        # Compute crisp numerical target price & stop loss
+        if "BUY" in signal:
+            r1 = classic_pivots.get("r1") or fib_pivots.get("r1")
+            r2 = classic_pivots.get("r2") or fib_pivots.get("r2")
+            if r1 and r1 > price * 1.02:
+                target_price = round(r1, 2)
+            elif r2 and r2 > price * 1.04:
+                target_price = round(r2, 2)
+            else:
+                target_price = round(price + (atr * 2.8), 2)
+
+            s1 = classic_pivots.get("s1") or fib_pivots.get("s1")
+            if s1 and s1 < price * 0.98:
+                stop_loss = round(s1, 2)
+            else:
+                stop_loss = round(max(0.1, price - (atr * 1.5)), 2)
+
+            entry_zone = f"₹{(price * 0.985):.2f} – ₹{(price * 1.008):.2f}"
+            key_cat = bull.get("strongest_arguments", ["Favorable valuation and growth profile"])[0]
+            inval = f"Sustained daily close below stop-loss at ₹{stop_loss:.2f}."
+
+        elif "SELL" in signal:
+            s1 = classic_pivots.get("s1") or fib_pivots.get("s1")
+            s2 = classic_pivots.get("s2") or fib_pivots.get("s2")
+            if s1 and s1 < price * 0.98:
+                target_price = round(s1, 2)
+            elif s2 and s2 < price * 0.95:
+                target_price = round(s2, 2)
+            else:
+                target_price = round(max(0.1, price - (atr * 2.5)), 2)
+
+            r1 = classic_pivots.get("r1") or fib_pivots.get("r1")
+            if r1 and r1 > price * 1.02:
+                stop_loss = round(r1, 2)
+            else:
+                stop_loss = round(price + (atr * 1.5), 2)
+
+            entry_zone = f"₹{(price * 0.995):.2f} – ₹{(price * 1.015):.2f}"
+            key_cat = bear.get("strongest_arguments", ["Downside technical breakdown and margin pressure"])[0]
+            inval = f"Breakout above overhead resistance at ₹{stop_loss:.2f}."
+
+        else: # HOLD / NEUTRAL
+            target_price = round(classic_pivots.get("r1", price * 1.04), 2)
+            stop_loss = round(classic_pivots.get("s1", price * 0.96), 2)
+            entry_zone = f"Range-bound consolidation near ₹{price:.2f}"
+            key_cat = "Consolidation within classic pivot boundaries."
+            inval = f"Breakout on volume beyond ₹{target_price:.2f} or ₹{stop_loss:.2f}."
+
+        # Compute risk : reward ratio
+        reward = abs(target_price - price)
+        risk_amt = abs(price - stop_loss)
+        rr_ratio = round(reward / risk_amt, 1) if risk_amt > 0 else 2.0
+        rr_str = f"1 : {rr_ratio}"
+
+        target_pct = ((target_price - price) / price * 100.0) if price > 0 else 0.0
+        stop_pct = ((stop_loss - price) / price * 100.0) if price > 0 else 0.0
 
         quality = "HIGH" if (quote.price and tech.indicators and fund.key_ratios and sent.sample_size >= 5) else "MEDIUM"
 
+        # Update risk_analysis dict with clear direction levels
+        risk["target_price"] = target_price
+        risk["stop_loss"] = stop_loss
+        risk["risk_reward_ratio"] = rr_str
+        risk["conviction_score"] = conviction
+        risk["entry_zone"] = entry_zone
+        risk["key_catalyst"] = key_cat
+        risk["invalidation_trigger"] = inval
+
         return {
             "signal": signal,
+            "conviction_score": conviction,
+            "target_price": target_price,
+            "stop_loss": stop_loss,
+            "risk_reward_ratio": rr_str,
+            "entry_zone": entry_zone,
+            "key_catalyst": key_cat,
+            "invalidation_trigger": inval,
             "evidence_quality": quality,
             "time_horizon": "Medium-Term (3 to 6 Months)",
             "executive_summary": (
-                f"Multi-agent deliberation for {quote.symbol} arrives at a {signal} stance with {quality} evidence quality. "
-                f"The stock trades at ₹{quote.price:.2f} with a {tech_bias.lower()} technical configuration (RSI {tech.indicators.get('rsi_14')}). "
-                f"Valuation exhibits a P/E of {pe or 'N/A'} against sector backdrop of {fund.overview.get('sector', 'N/A')}."
+                f"Multi-agent synthesis for {quote.company_name or quote.symbol} issues a {signal} directive "
+                f"with {conviction}% conviction and {quality} evidence quality. "
+                f"The stock trades at ₹{price:.2f} with a {tech_bias.lower()} technical bias (RSI {rsi or 'N/A'}). "
+                f"Actionable Target Price: ₹{target_price:.2f} ({target_pct:+.1f}%), "
+                f"Stop-Loss: ₹{stop_loss:.2f} ({stop_pct:+.1f}%), yielding a {rr_str} Risk/Reward structure."
             ),
             "investment_thesis": (
-                f"The balance of evidence suggests that {quote.company_name or quote.symbol}'s near-term trajectory "
-                f"is governed by {bull['strongest_arguments'][0]} against the primary vulnerability of {bear['strongest_arguments'][0]}. "
-                f"Investors should monitor pivot support at ₹{tech.indicators.get('pivot_points_classic', {}).get('s1', 'N/A')} "
-                f"as the critical invalidation threshold."
+                f"The balance of evidence indicates that {quote.company_name or quote.symbol}'s primary catalyst "
+                f"is: '{key_cat}'. "
+                f"Downside risk must be protected at ₹{stop_loss:.2f} ({stop_pct:+.1f}%) as the critical invalidation threshold."
             ),
         }

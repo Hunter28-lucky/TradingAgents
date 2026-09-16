@@ -100,57 +100,48 @@ def get_market_clock():
     return IndianMarketClock.get_market_status_payload()
 
 
+from tradingagents.providers.indian_stocks import INDIAN_STOCKS_DIRECTORY, search_indian_stocks, get_stock_metadata
+
+
 @app.get("/api/market/search")
 def search_symbols(q: str = Query(..., min_length=1, max_length=50)):
-    """Searches top Indian equities and indices by name or symbol."""
+    """Searches top Indian equities and indices by name, symbol, or sector."""
     query = q.strip().upper()
     results = []
 
     # Check indices first
     for name, sym in INDEX_MAP.items():
-        if query in name or query in sym:
+        if query in name.upper() or query in sym.upper():
             results.append({"symbol": sym, "name": name, "exchange": "NSE/BSE", "type": "INDEX"})
 
-    # Known popular universe
-    popular = [
-        ("RELIANCE.NS", "Reliance Industries Ltd", "Energy"),
-        ("TCS.NS", "Tata Consultancy Services Ltd", "IT Services"),
-        ("HDFCBANK.NS", "HDFC Bank Ltd", "Financial Services"),
-        ("INFY.NS", "Infosys Ltd", "IT Services"),
-        ("ICICIBANK.NS", "ICICI Bank Ltd", "Financial Services"),
-        ("SBIN.NS", "State Bank of India", "Financial Services"),
-        ("BHARTIARTL.NS", "Bharti Airtel Ltd", "Telecommunications"),
-        ("ITC.NS", "ITC Ltd", "FMCG"),
-        ("LT.NS", "Larsen & Toubro Ltd", "Capital Goods"),
-        ("TATAMOTORS.NS", "Tata Motors Ltd", "Automotive"),
-        ("SUNPHARMA.NS", "Sun Pharmaceutical Industries", "Healthcare"),
-        ("MARUTI.NS", "Maruti Suzuki India Ltd", "Automotive"),
-        ("BAJFINANCE.NS", "Bajaj Finance Ltd", "Financial Services"),
-        ("AXISBANK.NS", "Axis Bank Ltd", "Financial Services"),
-        ("KOTAKBANK.NS", "Kotak Mahindra Bank Ltd", "Financial Services"),
-        ("WIPRO.NS", "Wipro Ltd", "IT Services"),
-        ("HCLTECH.NS", "HCL Technologies Ltd", "IT Services"),
-        ("ASIANPAINT.NS", "Asian Paints Ltd", "Consumer Durables"),
-        ("TITAN.NS", "Titan Company Ltd", "Consumer Durables"),
-        ("NTPC.NS", "NTPC Ltd", "Power / Utilities"),
-        ("ONGC.NS", "Oil & Natural Gas Corp", "Energy"),
-        ("POWERGRID.NS", "Power Grid Corporation of India", "Power"),
-        ("COALINDIA.NS", "Coal India Ltd", "Metals & Mining"),
-        ("ADANIENT.NS", "Adani Enterprises Ltd", "Commodities"),
-        ("ADANIPORTS.NS", "Adani Ports and SEZ Ltd", "Infrastructure"),
-    ]
+    # Search Indian equities directory
+    matched = search_indian_stocks(query, limit=20)
+    for item in matched:
+        results.append({
+            "symbol": item["symbol"],
+            "name": item["name"],
+            "exchange": "NSE",
+            "sector": item["sector"],
+            "cap": item.get("cap", "Equity"),
+            "type": "EQUITY",
+        })
 
-    for sym, name, sector in popular:
-        clean_s = sym.replace(".NS", "")
-        if query in clean_s or query in name.upper() or query in sector.upper():
-            results.append({"symbol": sym, "name": name, "exchange": "NSE", "sector": sector, "type": "EQUITY"})
-
-    # If user searched an exact ticker that wasn't in popular, offer it directly
-    if not any(r["symbol"] == normalize_indian_symbol(query) for r in results):
+    # If user searched an exact ticker that wasn't in directory, offer it directly (only if single token without spaces)
+    if " " not in query and len(query) <= 20 and query.isalnum():
         norm = normalize_indian_symbol(query)
-        results.append({"symbol": norm, "name": f"{query} (Custom Ticker)", "exchange": "NSE", "type": "EQUITY"})
+        if not any(r["symbol"] == norm for r in results):
+            results.append({"symbol": norm, "name": f"{query} (Custom Ticker)", "exchange": "NSE", "type": "EQUITY"})
 
-    return {"query": q, "results": results[:15]}
+    return {"query": q, "results": results[:20]}
+
+
+@app.get("/api/market/stocks")
+def get_all_indian_stocks(sector: Optional[str] = None):
+    """Returns the comprehensive directory of Indian equities, optionally filtered by sector."""
+    if sector:
+        filtered = [s for s in INDIAN_STOCKS_DIRECTORY if sector.lower() in s["sector"].lower()]
+        return {"total": len(filtered), "stocks": filtered}
+    return {"total": len(INDIAN_STOCKS_DIRECTORY), "stocks": INDIAN_STOCKS_DIRECTORY}
 
 
 # --- Stock Research Endpoints ---

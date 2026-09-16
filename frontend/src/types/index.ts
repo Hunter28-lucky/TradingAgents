@@ -212,9 +212,16 @@ export interface AnalysisRecord {
   price_at_analysis?: number;
   model_provider: string;
   model_name: string;
-  signal: 'BUY BIAS' | 'HOLD BIAS' | 'SELL BIAS' | 'INSUFFICIENT DATA';
+  signal: 'STRONG BUY' | 'BUY BIAS' | 'HOLD / NEUTRAL' | 'HOLD BIAS' | 'SELL BIAS' | 'STRONG SELL' | string;
   evidence_quality: 'HIGH' | 'MEDIUM' | 'LOW';
   time_horizon: string;
+  conviction_score?: number;
+  target_price?: number;
+  stop_loss?: number;
+  risk_reward_ratio?: string;
+  entry_zone?: string;
+  key_catalyst?: string;
+  invalidation_trigger?: string;
   executive_summary: string;
   investment_thesis: string;
   bull_case: {

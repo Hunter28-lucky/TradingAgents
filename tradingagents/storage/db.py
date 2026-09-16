@@ -231,6 +231,14 @@ class StorageManager:
                     res[json_col] = json.loads(res[json_col])
                 except Exception:
                     pass
+
+        # Elevate directional execution parameters to top-level if present in risk_analysis
+        if isinstance(res.get("risk_analysis"), dict):
+            ra = res["risk_analysis"]
+            for field in ["target_price", "stop_loss", "conviction_score", "risk_reward_ratio", "entry_zone", "key_catalyst", "invalidation_trigger"]:
+                if field in ra and res.get(field) is None:
+                    res[field] = ra[field]
+
         return res
 
     @classmethod
@@ -253,6 +261,11 @@ class StorageManager:
                         item[jc] = json.loads(item[jc])
                     except Exception:
                         pass
+            if isinstance(item.get("risk_analysis"), dict):
+                ra = item["risk_analysis"]
+                for field in ["target_price", "stop_loss", "conviction_score", "risk_reward_ratio", "entry_zone"]:
+                    if field in ra and item.get(field) is None:
+                        item[field] = ra[field]
             results.append(item)
         return results
 

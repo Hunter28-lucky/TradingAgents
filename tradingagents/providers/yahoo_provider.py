@@ -42,6 +42,10 @@ INDEX_MAP = {
 _QUOTE_CACHE: Dict[str, Tuple[QuoteResult, float]] = {}
 # In-memory OHLCV cache: {key: (pd.DataFrame, DataProvenance, timestamp)}
 _OHLCV_CACHE: Dict[str, Tuple[pd.DataFrame, DataProvenance, float]] = {}
+# In-memory fundamentals cache: {symbol: (FundamentalMetricsResult, timestamp)}
+_FUNDAMENTALS_CACHE: Dict[str, Tuple[FundamentalMetricsResult, float]] = {}
+# In-memory news cache: {symbol: (List[NewsItem], timestamp)}
+_NEWS_CACHE: Dict[str, Tuple[List[NewsItem], float]] = {}
 
 
 def normalize_indian_symbol(symbol: str) -> str:
@@ -155,10 +159,21 @@ class YahooMarketDataProvider:
                         week_52_high = info.get("fiftyTwoWeekHigh")
                     if not week_52_low:
                         week_52_low = info.get("fiftyTwoWeekLow")
-                    if not market_cap:
-                        market_cap = info.get("marketCap")
                 except Exception as e:
                     logger.debug(f"info lookup failed: {e}")
+
+            # Fallback to Indian stocks directory if company_name or sector missing
+            if not company_name or company_name == symbol or not sector:
+                try:
+                    from tradingagents.providers.indian_stocks import get_stock_metadata
+                    meta = get_stock_metadata(symbol)
+                    if meta:
+                        if not company_name or company_name == symbol:
+                            company_name = meta["name"]
+                        if not sector:
+                            sector = meta["sector"]
+                except Exception:
+                    pass
 
             latency = (time.time() - start_t) * 1000.0
             prov = DataProvenance(
@@ -338,10 +353,16 @@ class YahooMarketDataProvider:
         )
 
     @classmethod
-    def get_fundamentals(cls, raw_symbol: str) -> FundamentalMetricsResult:
+    def get_fundamentals(cls, raw_symbol: str, force_refresh: bool = False) -> FundamentalMetricsResult:
         """Fetches audited financial statements and ratios for Indian equities."""
         symbol = normalize_indian_symbol(raw_symbol)
         now_ist = IndianMarketClock.now_ist()
+
+        if not force_refresh and symbol in _FUNDAMENTALS_CACHE:
+            cached_fund, cache_time = _FUNDAMENTALS_CACHE[symbol]
+            if time.time() - cache_time < 3600.0:
+                return cached_fund
+
         start_t = time.time()
 
         try:
@@ -443,7 +464,7 @@ class YahooMarketDataProvider:
                 latency_ms=round(latency, 1),
             )
 
-            return FundamentalMetricsResult(
+            res = FundamentalMetricsResult(
                 symbol=symbol,
                 overview=overview,
                 income_statement=income_records,
@@ -452,6 +473,8 @@ class YahooMarketDataProvider:
                 key_ratios=key_ratios,
                 provenance=prov,
             )
+            _FUNDAMENTALS_CACHE[symbol] = (res, time.time())
+            return res
 
         except Exception as exc:
             latency = (time.time() - start_t) * 1000.0
@@ -476,10 +499,16 @@ class YahooMarketDataProvider:
             )
 
     @classmethod
-    def get_news(cls, raw_symbol: str, limit: int = 10) -> List[NewsItem]:
+    def get_news(cls, raw_symbol: str, limit: int = 10, force_refresh: bool = False) -> List[NewsItem]:
         """Fetches verified news articles with publisher attribution and links."""
         symbol = normalize_indian_symbol(raw_symbol)
         now_ist = IndianMarketClock.now_ist()
+
+        if not force_refresh and symbol in _NEWS_CACHE:
+            cached_news, cache_time = _NEWS_CACHE[symbol]
+            if time.time() - cache_time < 300.0:
+                return cached_news[:limit]
+
         start_t = time.time()
 
         try:
@@ -521,7 +550,7 @@ class YahooMarketDataProvider:
                         retrieved_at=now_ist.isoformat(),
                         timezone="Asia/Kolkata",
                         status=DataStatus.HISTORICAL,
-                        freshness_label=f"Published {pub_str}",
+                        freshness_label=f"Published: {pub_str}",
                     )
                     items.append(
                         NewsItem(
@@ -530,11 +559,11 @@ class YahooMarketDataProvider:
                             published_at=pub_str,
                             url=link,
                             summary=summary,
-                            relevance=symbol,
                             provenance=prov,
                         )
                     )
 
+            _NEWS_CACHE[symbol] = (items, time.time())
             return items
 
         except Exception as exc:

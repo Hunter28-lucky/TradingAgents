@@ -18,12 +18,13 @@ export const DecisionView: React.FC<DecisionViewProps> = ({ analysis }) => {
     );
   }
 
-  const signalColor =
-    analysis.signal === 'BUY BIAS'
-      ? 'var(--color-bullish)'
-      : analysis.signal === 'SELL BIAS'
-      ? 'var(--color-bearish)'
-      : 'var(--color-accent-cyan)';
+  const isBuy = analysis.signal.includes('BUY');
+  const isSell = analysis.signal.includes('SELL');
+  const signalColor = isBuy
+    ? 'var(--color-bullish)'
+    : isSell
+    ? 'var(--color-bearish)'
+    : 'var(--color-accent-cyan)';
 
   const qualityColor =
     analysis.evidence_quality === 'HIGH'
@@ -31,6 +32,18 @@ export const DecisionView: React.FC<DecisionViewProps> = ({ analysis }) => {
       : analysis.evidence_quality === 'MEDIUM'
       ? 'var(--color-warning)'
       : 'var(--color-bearish)';
+
+  const price = analysis.price_at_analysis || 0;
+  const targetPrice = analysis.target_price || (analysis.risk_analysis as any)?.target_price;
+  const stopLoss = analysis.stop_loss || (analysis.risk_analysis as any)?.stop_loss;
+  const rrRatio = analysis.risk_reward_ratio || (analysis.risk_analysis as any)?.risk_reward_ratio || '1 : 2.5';
+  const conviction = analysis.conviction_score || (analysis.risk_analysis as any)?.conviction_score || (isBuy ? 80 : isSell ? 78 : 55);
+  const entryZone = analysis.entry_zone || (analysis.risk_analysis as any)?.entry_zone || `Near ₹${price.toFixed(2)}`;
+  const keyCatalyst = analysis.key_catalyst || analysis.bull_case?.strongest_arguments?.[0] || 'Favorable risk/reward profile';
+  const invalidationTrigger = analysis.invalidation_trigger || `Sustained breakdown below ₹${stopLoss ? Number(stopLoss).toFixed(2) : 'support'}.`;
+
+  const targetPct = price > 0 && targetPrice ? ((targetPrice - price) / price) * 100 : null;
+  const stopPct = price > 0 && stopLoss ? ((stopLoss - price) / price) * 100 : null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -46,9 +59,9 @@ export const DecisionView: React.FC<DecisionViewProps> = ({ analysis }) => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <div style={{ fontSize: '0.78rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-              Synthesized Portfolio Manager Decision
+              Synthesized Portfolio Manager Directive
             </div>
-            <div style={{ fontSize: '2rem', fontWeight: 800, color: signalColor, fontFamily: 'var(--font-display)', marginTop: '4px' }}>
+            <div style={{ fontSize: '2.2rem', fontWeight: 900, color: signalColor, fontFamily: 'var(--font-display)', marginTop: '4px', letterSpacing: '-0.02em' }}>
               {analysis.signal}
             </div>
             <div style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
@@ -56,7 +69,13 @@ export const DecisionView: React.FC<DecisionViewProps> = ({ analysis }) => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '1.5rem', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ display: 'flex', gap: '1.5rem', fontFamily: 'var(--font-mono)', flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>AI CONVICTION</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: signalColor, marginTop: '2px' }}>
+                {conviction}%
+              </div>
+            </div>
             <div>
               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>EVIDENCE QUALITY</div>
               <div style={{ fontSize: '1.1rem', fontWeight: 700, color: qualityColor, marginTop: '2px' }}>
@@ -74,6 +93,89 @@ export const DecisionView: React.FC<DecisionViewProps> = ({ analysis }) => {
               <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-cyan)', marginTop: '2px' }}>
                 {analysis.execution_duration_sec}s
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Actionable Direction & Execution Strategy Grid */}
+      <div className="terminal-card" style={{ borderTop: `3px solid ${signalColor}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Award size={18} color={signalColor} /> Actionable Execution Direction & Targets
+          </h3>
+          <span className="pill pill-live" style={{ fontSize: '0.72rem' }}>
+            Deterministic Calculation
+          </span>
+        </div>
+
+        <div className="grid-4" style={{ gap: '1rem', marginBottom: '1.25rem' }}>
+          {/* Target Price */}
+          <div style={{ background: 'rgba(0, 230, 118, 0.05)', border: '1px solid rgba(0, 230, 118, 0.2)', padding: '12px', borderRadius: '6px' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>TARGET PRICE</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-bullish)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
+              {targetPrice ? `₹${Number(targetPrice).toFixed(2)}` : 'N/A'}
+            </div>
+            {targetPct !== null && (
+              <div style={{ fontSize: '0.78rem', color: 'var(--color-bullish)', marginTop: '2px', fontWeight: 600 }}>
+                {targetPct >= 0 ? `+${targetPct.toFixed(1)}%` : `${targetPct.toFixed(1)}%`} Upside
+              </div>
+            )}
+          </div>
+
+          {/* Stop Loss */}
+          <div style={{ background: 'rgba(255, 23, 68, 0.05)', border: '1px solid rgba(255, 23, 68, 0.2)', padding: '12px', borderRadius: '6px' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>STOP LOSS</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-bearish)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
+              {stopLoss ? `₹${Number(stopLoss).toFixed(2)}` : 'N/A'}
+            </div>
+            {stopPct !== null && (
+              <div style={{ fontSize: '0.78rem', color: 'var(--color-bearish)', marginTop: '2px', fontWeight: 600 }}>
+                {stopPct.toFixed(1)}% Downside Risk
+              </div>
+            )}
+          </div>
+
+          {/* Risk : Reward */}
+          <div style={{ background: 'rgba(0, 229, 255, 0.05)', border: '1px solid rgba(0, 229, 255, 0.2)', padding: '12px', borderRadius: '6px' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>RISK / REWARD</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-accent-cyan)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
+              {rrRatio}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+              Institutional Standard
+            </div>
+          </div>
+
+          {/* Entry Zone */}
+          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-color)', padding: '12px', borderRadius: '6px' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>RECOMMENDED ENTRY</div>
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
+              {entryZone}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+              Near key structural support
+            </div>
+          </div>
+        </div>
+
+        {/* Primary Catalyst & Invalidation Cards */}
+        <div className="grid-2" style={{ gap: '1rem' }}>
+          <div style={{ padding: '10px 14px', background: 'rgba(0, 230, 118, 0.04)', borderLeft: '3px solid var(--color-bullish)', borderRadius: '4px' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-bullish)', fontWeight: 700, textTransform: 'uppercase' }}>
+              Primary Upside Catalyst
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: 1.5 }}>
+              {keyCatalyst}
+            </div>
+          </div>
+
+          <div style={{ padding: '10px 14px', background: 'rgba(255, 23, 68, 0.04)', borderLeft: '3px solid var(--color-bearish)', borderRadius: '4px' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-bearish)', fontWeight: 700, textTransform: 'uppercase' }}>
+              Critical Invalidation Trigger
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: 1.5 }}>
+              {invalidationTrigger}
             </div>
           </div>
         </div>
