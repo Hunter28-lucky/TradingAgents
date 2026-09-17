@@ -191,7 +191,42 @@ class AIChatEngine:
         """Invokes the configured LLM client with strict financial grounding."""
         system_prompt = cls._build_system_prompt(context, persona_key)
 
-        # 1. Try Anthropic (Claude / Bedrock)
+        # 1. Try OpenRouter (if OPENROUTER_API_KEY is set)
+        if os.getenv("OPENROUTER_API_KEY"):
+            try:
+                from tradingagents.llm_clients.factory import create_llm_client
+                from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+
+                or_model = os.getenv("OPENROUTER_MODEL", "nvidia/nemotron-3-ultra-550b-a55b:free")
+                client = create_llm_client(
+                    provider="openrouter",
+                    model=or_model,
+                    api_key=os.getenv("OPENROUTER_API_KEY"),
+                )
+                llm = client.get_llm()
+                langchain_msgs = [SystemMessage(content=system_prompt)]
+                for m in messages:
+                    if m.get("role") == "user":
+                        langchain_msgs.append(HumanMessage(content=m.get("content", "")))
+                    elif m.get("role") == "assistant":
+                        langchain_msgs.append(AIMessage(content=m.get("content", "")))
+
+                response = llm.invoke(langchain_msgs)
+                text = getattr(response, "content", str(response))
+                if isinstance(text, list):
+                    text = "".join(str(b.get("text", "")) if isinstance(b, dict) else str(b) for b in text)
+                return text
+            except Exception as exc:
+                err_str = str(exc)
+                logger.warning(f"OpenRouter API call issue: {err_str}")
+                if "429" in err_str or "Rate limit" in err_str or "free-models-per-day" in err_str:
+                    note = (
+                        "> ℹ️ **OpenRouter Daily Limit Notice:** Free tier 50 requests/day quota reached for today on OpenRouter. "
+                        "Providing mathematically audited research analysis from live exchange feeds:\n\n"
+                    )
+                    return note + cls._generate_deterministic_reply(context, messages, persona_key)
+
+        # 2. Try Anthropic (Claude / Bedrock)
         if os.getenv("ANTHROPIC_API_KEY"):
             from tradingagents.llm_clients.anthropic_client import AnthropicClient
             from langchain_core.messages import SystemMessage, HumanMessage, AIMessage

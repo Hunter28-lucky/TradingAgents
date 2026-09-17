@@ -90,16 +90,19 @@ class AnalysisRunnerManager:
         # Determine configured LLM provider
         active_provider = provider
         if not active_provider:
-            if os.getenv("ANTHROPIC_API_KEY"):
+            if os.getenv("OPENROUTER_API_KEY"):
+                active_provider = "openrouter"
+            elif os.getenv("ANTHROPIC_API_KEY"):
                 active_provider = "anthropic"
             elif os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
                 active_provider = "google"
             elif os.getenv("OPENAI_API_KEY"):
                 active_provider = "openai"
             else:
-                active_provider = "anthropic"
+                active_provider = "openrouter" if os.getenv("OPENROUTER_API_KEY") else "anthropic"
 
-        active_model = model or ("claude-sonnet-5" if active_provider == "anthropic" else "gemini-2.5-flash")
+        default_model = "nvidia/nemotron-3-ultra-550b-a55b:free" if active_provider == "openrouter" else ("claude-sonnet-5" if active_provider == "anthropic" else "gemini-2.5-flash")
+        active_model = model or default_model
 
         job = AnalysisJob(job_id, symbol, active_provider, active_model)
         _JOBS[job_id] = job

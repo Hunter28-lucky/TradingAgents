@@ -118,34 +118,69 @@ from tradingagents.providers.indian_stocks import INDIAN_STOCKS_DIRECTORY, searc
 
 @app.get("/api/market/search")
 def search_symbols(q: str = Query(..., min_length=1, max_length=50)):
-    """Searches top Indian equities and indices by name, symbol, or sector."""
+    """Searches Indian equities and indices by name, symbol, or sector with live exchange lookup."""
     query = q.strip().upper()
     results = []
+    seen_symbols = set()
 
-    # Check indices first
+    # 1. Check indices first
     for name, sym in INDEX_MAP.items():
         if query in name.upper() or query in sym.upper():
-            results.append({"symbol": sym, "name": name, "exchange": "NSE/BSE", "type": "INDEX"})
+            if sym not in seen_symbols:
+                results.append({"symbol": sym, "name": name, "exchange": "NSE/BSE", "type": "INDEX"})
+                seen_symbols.add(sym)
 
-    # Search Indian equities directory
+    # 2. Search local Indian equities directory
     matched = search_indian_stocks(query, limit=20)
     for item in matched:
-        results.append({
-            "symbol": item["symbol"],
-            "name": item["name"],
-            "exchange": "NSE",
-            "sector": item["sector"],
-            "cap": item.get("cap", "Equity"),
-            "type": "EQUITY",
-        })
+        if item["symbol"] not in seen_symbols:
+            results.append({
+                "symbol": item["symbol"],
+                "name": item["name"],
+                "exchange": "NSE",
+                "sector": item["sector"],
+                "cap": item.get("cap", "Equity"),
+                "type": "EQUITY",
+            })
+            seen_symbols.add(item["symbol"])
 
-    # If user searched an exact ticker that wasn't in directory, offer it directly (only if single token without spaces)
+    # 3. Live Yahoo Finance Exchange Search (TradingView-style discovery across all 4,000+ NSE/BSE stocks)
+    if len(query) >= 2:
+        try:
+            import urllib.parse
+            import requests
+            url = f"https://query1.finance.yahoo.com/v1/finance/search?q={urllib.parse.quote(q.strip())}&quotesCount=15&newsCount=0"
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            resp = requests.get(url, headers=headers, timeout=3.0)
+            if resp.status_code == 200:
+                quotes = resp.json().get("quotes", [])
+                for item in quotes:
+                    sym = item.get("symbol", "")
+                    exch = item.get("exchange", "")
+                    if sym.endswith(".NS") or sym.endswith(".BO") or exch in ("NSI", "NSE", "BSE", "BOM"):
+                        if sym not in seen_symbols:
+                            is_bse = sym.endswith(".BO") or exch in ("BSE", "BOM")
+                            comp_name = item.get("shortname") or item.get("longname") or sym
+                            results.append({
+                                "symbol": sym,
+                                "name": comp_name,
+                                "exchange": "BSE" if is_bse else "NSE",
+                                "sector": item.get("sector", "Equity"),
+                                "cap": "Listed Equity",
+                                "type": "EQUITY",
+                            })
+                            seen_symbols.add(sym)
+        except Exception as exc:
+            logger.debug(f"Live search error: {exc}")
+
+    # 4. Fallback if single alphanumeric token
     if " " not in query and len(query) <= 20 and query.isalnum():
         norm = normalize_indian_symbol(query)
-        if not any(r["symbol"] == norm for r in results):
+        if norm not in seen_symbols:
             results.append({"symbol": norm, "name": f"{query} (Custom Ticker)", "exchange": "NSE", "type": "EQUITY"})
+            seen_symbols.add(norm)
 
-    return {"query": q, "results": results[:20]}
+    return {"query": q, "results": results[:25]}
 
 
 @app.get("/api/market/stocks")
@@ -498,6 +533,17 @@ def get_data_sources_status():
             "auth_type": "Server-side Secret Key (Masked)",
             "status_message": "Configured ✓" if os.getenv("OPENAI_API_KEY") else "Not configured",
         },
+        {
+            "provider": "OpenRouter AI Gateway",
+            "category": "Multi-Provider LLM Gateway",
+            "purpose": "Access to top reasoning & free models (Nemotron 550B, Gemma 4, GLM, Ling Fin)",
+            "status": "CONNECTED" if bool(os.getenv("OPENROUTER_API_KEY")) else "UNAVAILABLE",
+            "is_configured": bool(os.getenv("OPENROUTER_API_KEY")),
+            "data_type": "AI Reasoning & Structured Output",
+            "last_request": "On-demand",
+            "auth_type": "Server-side Secret Key (Masked)",
+            "status_message": "Configured ✓" if os.getenv("OPENROUTER_API_KEY") else "Not configured (Set OPENROUTER_API_KEY)",
+        },
     ]
 
     return {"sources": sources}
@@ -507,6 +553,11 @@ def get_data_sources_status():
 def get_configured_models():
     """Lists available LLM options based on configured API keys."""
     models = []
+    if os.getenv("OPENROUTER_API_KEY"):
+        models.append({"provider": "openrouter", "model": "nvidia/nemotron-3-ultra-550b-a55b:free", "label": "NVIDIA Nemotron 3 Ultra 550B (Free - Top Reasoning)"})
+        models.append({"provider": "openrouter", "model": "google/gemma-4-31b-it:free", "label": "Google Gemma 4 31B (Free - Deep Analysis)"})
+        models.append({"provider": "openrouter", "model": "z-ai/glm-5.2:free", "label": "GLM 5.2 (Free - High Speed)"})
+        models.append({"provider": "openrouter", "model": "inclusionai/ling-3.0-flash-fin:free", "label": "Ling 3.0 Flash Fin (Free - Financial Specialist)"})
     if os.getenv("ANTHROPIC_API_KEY"):
         models.append({"provider": "anthropic", "model": "claude-sonnet-5", "label": "Claude Sonnet 5 (Recommended)"})
         models.append({"provider": "anthropic", "model": "claude-3-5-haiku", "label": "Claude 3.5 Haiku (Fast)"})
@@ -519,7 +570,7 @@ def get_configured_models():
 
     # Default fallback
     if not models:
-        models.append({"provider": "anthropic", "model": "claude-sonnet-5", "label": "Claude Sonnet 5"})
+        models.append({"provider": "openrouter", "model": "nvidia/nemotron-3-ultra-550b-a55b:free", "label": "NVIDIA Nemotron 3 Ultra 550B (Free)"})
 
     return {"models": models}
 

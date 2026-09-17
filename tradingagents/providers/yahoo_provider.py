@@ -6,8 +6,10 @@ from __future__ import annotations
 import datetime
 import logging
 import time
+import urllib.parse
 from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
+import requests
 import yfinance as yf
 
 from tradingagents.providers.base import (
@@ -38,6 +40,21 @@ INDEX_MAP = {
     "^INDIAVIX": "^INDIAVIX",
 }
 
+# Known corporate renames, mergers, and ticker transformations
+_KNOWN_RENAMES: Dict[str, str] = {
+    "ZOMATO": "ETERNAL.NS",
+    "ZOMATO.NS": "ETERNAL.NS",
+    "ZOMATO.BO": "ETERNAL.BO",
+    "SURATWWALA": "SBGLP.NS",
+    "SURATWWALA.NS": "SBGLP.NS",
+    "SURATWWALA.BO": "SBGLP.BO",
+    "SBGLP": "SBGLP.NS",
+    "TATAMOTORS": "TATAMOTORS.NS",
+}
+
+# In-memory resolved symbol alias map: {requested_symbol: canonical_ticker}
+_SYMBOL_ALIAS_MAP: Dict[str, str] = dict(_KNOWN_RENAMES)
+
 # In-memory quote cache: {symbol: (QuoteResult, timestamp)}
 _QUOTE_CACHE: Dict[str, Tuple[QuoteResult, float]] = {}
 # In-memory OHLCV cache: {key: (pd.DataFrame, DataProvenance, timestamp)}
@@ -48,16 +65,97 @@ _FUNDAMENTALS_CACHE: Dict[str, Tuple[FundamentalMetricsResult, float]] = {}
 _NEWS_CACHE: Dict[str, Tuple[List[NewsItem], float]] = {}
 
 
+def resolve_indian_symbol(raw_symbol: str) -> str:
+    """Normalizes and resolves real active exchange tickers across NSE and BSE.
+    
+    If a symbol has changed name/ticker (e.g. ZOMATO -> ETERNAL.NS, SURATWWALA -> SBGLP.NS),
+    or was entered with the wrong exchange suffix (.NS instead of .BO or vice versa),
+    this verifies against real market data and uses Yahoo Finance search to locate
+    the verified traded security.
+    """
+    clean = raw_symbol.strip().upper()
+    if clean in INDEX_MAP:
+        return INDEX_MAP[clean]
+    if clean.startswith("^"):
+        return clean
+
+    # Check cached aliases
+    if clean in _SYMBOL_ALIAS_MAP:
+        return _SYMBOL_ALIAS_MAP[clean]
+
+    # Ensure exchange suffix
+    formatted = clean if "." in clean else f"{clean}.NS"
+    if formatted in _SYMBOL_ALIAS_MAP:
+        return _SYMBOL_ALIAS_MAP[formatted]
+
+    # Fast verification: check if formatted symbol has history
+    try:
+        t = yf.Ticker(formatted)
+        hist = t.history(period="2d")
+        if hist is not None and not hist.empty:
+            _SYMBOL_ALIAS_MAP[clean] = formatted
+            _SYMBOL_ALIAS_MAP[formatted] = formatted
+            return formatted
+    except Exception:
+        pass
+
+    # Try alternate exchange suffix (.BO <-> .NS)
+    alt = None
+    if formatted.endswith(".NS"):
+        alt = formatted[:-3] + ".BO"
+    elif formatted.endswith(".BO"):
+        alt = formatted[:-3] + ".NS"
+
+    if alt:
+        try:
+            t_alt = yf.Ticker(alt)
+            h_alt = t_alt.history(period="2d")
+            if h_alt is not None and not h_alt.empty:
+                _SYMBOL_ALIAS_MAP[clean] = alt
+                _SYMBOL_ALIAS_MAP[formatted] = alt
+                _SYMBOL_ALIAS_MAP[alt] = alt
+                return alt
+        except Exception:
+            pass
+
+    # Search Yahoo Finance query endpoint with base name
+    base_name = clean.replace(".NS", "").replace(".BO", "").strip()
+    if len(base_name) >= 2:
+        try:
+            url = f"https://query1.finance.yahoo.com/v1/finance/search?q={urllib.parse.quote(base_name)}&quotesCount=10&newsCount=0"
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            resp = requests.get(url, headers=headers, timeout=3.5)
+            if resp.status_code == 200:
+                quotes = resp.json().get("quotes", [])
+                for q in quotes:
+                    candidate = q.get("symbol", "")
+                    exch = q.get("exchange", "")
+                    if candidate.endswith(".NS") or candidate.endswith(".BO") or exch in ("NSI", "NSE", "BSE", "BOM"):
+                        t_cand = yf.Ticker(candidate)
+                        h_cand = t_cand.history(period="2d")
+                        if h_cand is not None and not h_cand.empty:
+                            _SYMBOL_ALIAS_MAP[clean] = candidate
+                            _SYMBOL_ALIAS_MAP[formatted] = candidate
+                            _SYMBOL_ALIAS_MAP[candidate] = candidate
+                            return candidate
+        except Exception as exc:
+            logger.debug(f"Search fallback for {clean} failed: {exc}")
+
+    _SYMBOL_ALIAS_MAP[clean] = formatted
+    return formatted
+
+
 def normalize_indian_symbol(symbol: str) -> str:
-    """Normalizes Indian equity symbols, adding .NS if no suffix exists."""
+    """Normalizes Indian equity symbols, resolving aliases and adding .NS if no suffix exists."""
     clean = symbol.strip().upper()
     if clean in INDEX_MAP:
         return INDEX_MAP[clean]
     if clean.startswith("^"):
         return clean
+    if clean in _SYMBOL_ALIAS_MAP:
+        return _SYMBOL_ALIAS_MAP[clean]
     if "." in clean:
         return clean
-    # Default Indian equities to National Stock Exchange (.NS)
     return f"{clean}.NS"
 
 
@@ -69,7 +167,7 @@ class YahooMarketDataProvider:
     @classmethod
     def get_quote(cls, raw_symbol: str, force_refresh: bool = False) -> QuoteResult:
         """Fetches real quote with verified freshness and provenance."""
-        symbol = normalize_indian_symbol(raw_symbol)
+        symbol = resolve_indian_symbol(raw_symbol)
         now_ist = IndianMarketClock.now_ist()
         is_open = IndianMarketClock.is_market_open(now_ist)
         ttl_seconds = 30.0 if is_open else 300.0
@@ -187,7 +285,9 @@ class YahooMarketDataProvider:
             )
 
             result = QuoteResult(
-                symbol=symbol,
+                symbol=raw_symbol,
+                resolved_symbol=symbol,
+                original_symbol=raw_symbol,
                 company_name=company_name,
                 exchange="BSE" if symbol.endswith(".BO") else "NSE",
                 price=round(last_close, 2),
@@ -209,6 +309,7 @@ class YahooMarketDataProvider:
                 provenance=prov,
             )
 
+            _QUOTE_CACHE[raw_symbol] = (result, time.time())
             _QUOTE_CACHE[symbol] = (result, time.time())
             return result
 
@@ -240,7 +341,7 @@ class YahooMarketDataProvider:
         force_refresh: bool = False,
     ) -> Tuple[Optional[pd.DataFrame], DataProvenance]:
         """Fetches OHLCV historical dataframe with data provenance."""
-        symbol = normalize_indian_symbol(raw_symbol)
+        symbol = resolve_indian_symbol(raw_symbol)
         cache_key = f"{symbol}_{period}_{interval}"
         now_ist = IndianMarketClock.now_ist()
         is_open = IndianMarketClock.is_market_open(now_ist)
@@ -355,7 +456,7 @@ class YahooMarketDataProvider:
     @classmethod
     def get_fundamentals(cls, raw_symbol: str, force_refresh: bool = False) -> FundamentalMetricsResult:
         """Fetches audited financial statements and ratios for Indian equities."""
-        symbol = normalize_indian_symbol(raw_symbol)
+        symbol = resolve_indian_symbol(raw_symbol)
         now_ist = IndianMarketClock.now_ist()
 
         if not force_refresh and symbol in _FUNDAMENTALS_CACHE:

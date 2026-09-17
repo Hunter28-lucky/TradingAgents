@@ -55,6 +55,8 @@ class DataProvenance(BaseModel):
 class QuoteResult(BaseModel):
     """Real market quote for an equity or index."""
     symbol: str
+    resolved_symbol: Optional[str] = None
+    original_symbol: Optional[str] = None
     company_name: Optional[str] = None
     exchange: str = "NSE"
     price: Optional[float] = None

@@ -10,7 +10,7 @@ import re
 from tradingagents.providers.base import DataProvenance, DataStatus, SentimentResult
 from tradingagents.providers.market_clock import IndianMarketClock
 from tradingagents.providers.news_engine import NewsEngine
-from tradingagents.providers.yahoo_provider import normalize_indian_symbol
+from tradingagents.providers.yahoo_provider import normalize_indian_symbol, resolve_indian_symbol
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class SentimentEngine:
     @classmethod
     def analyze_symbol_sentiment(cls, raw_symbol: str) -> SentimentResult:
         """Analyzes real sentiment from latest news headlines and public chatter."""
-        symbol = normalize_indian_symbol(raw_symbol)
+        symbol = resolve_indian_symbol(raw_symbol)
         now_ist = IndianMarketClock.now_ist()
 
         news_items = NewsEngine.get_company_news(symbol, limit=15)

@@ -17,6 +17,8 @@ export interface DataProvenance {
 
 export interface Quote {
   symbol: string;
+  resolved_symbol?: string | null;
+  original_symbol?: string | null;
   company_name?: string | null;
   exchange: string;
   price?: number | null;

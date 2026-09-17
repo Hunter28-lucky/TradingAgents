@@ -183,13 +183,26 @@ export const StockResearchView: React.FC<StockResearchViewProps> = ({
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <h1 style={{ fontSize: '1.8rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
               {symbol}
             </h1>
             <span className="pill pill-historical" style={{ fontSize: '0.72rem' }}>
               {quote?.exchange || 'NSE'}
             </span>
+            {quote?.resolved_symbol && quote.resolved_symbol !== symbol && (
+              <span
+                className="pill pill-live"
+                style={{
+                  fontSize: '0.72rem',
+                  background: 'rgba(56, 189, 248, 0.15)',
+                  color: '#38bdf8',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                }}
+              >
+                Official Ticker: {quote.resolved_symbol}
+              </span>
+            )}
             {quote?.provenance && (
               <span
                 className={`pill ${
@@ -201,7 +214,12 @@ export const StockResearchView: React.FC<StockResearchViewProps> = ({
             )}
           </div>
           <div style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-            {quote?.company_name || 'Loading company details...'}
+            {loadingQuote
+              ? 'Loading company details...'
+              : (quote?.company_name || symbol)}
+            {quote?.resolved_symbol && quote.resolved_symbol !== symbol && (
+              <span style={{ color: '#38bdf8', fontSize: '0.82rem' }}> (Matched from {symbol})</span>
+            )}
             {quote?.sector && <span style={{ color: 'var(--text-muted)' }}> • {quote.sector}</span>}
           </div>
         </div>
@@ -211,7 +229,11 @@ export const StockResearchView: React.FC<StockResearchViewProps> = ({
           <div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>LAST TRADED PRICE</div>
             <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-              {quote?.price ? `₹${quote.price.toLocaleString('en-IN')}` : 'Loading...'}
+              {loadingQuote
+                ? 'Loading...'
+                : quote?.price != null
+                ? `₹${quote.price.toLocaleString('en-IN')}`
+                : 'Unavailable'}
             </div>
             <div
               style={{

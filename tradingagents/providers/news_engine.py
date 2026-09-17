@@ -10,7 +10,7 @@ import requests
 
 from tradingagents.providers.base import DataProvenance, DataStatus, NewsItem
 from tradingagents.providers.market_clock import IndianMarketClock
-from tradingagents.providers.yahoo_provider import YahooMarketDataProvider, normalize_indian_symbol
+from tradingagents.providers.yahoo_provider import YahooMarketDataProvider, normalize_indian_symbol, resolve_indian_symbol
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class NewsEngine:
     @classmethod
     def get_company_news(cls, raw_symbol: str, limit: int = 15) -> List[NewsItem]:
         """Fetches verified company-specific news articles."""
-        symbol = normalize_indian_symbol(raw_symbol)
+        symbol = resolve_indian_symbol(raw_symbol)
         # Primary: Yahoo Finance verified news
         news_items = YahooMarketDataProvider.get_news(symbol, limit=limit)
 
