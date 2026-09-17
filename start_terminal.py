@@ -84,10 +84,14 @@ def find_available_port(preferred_port: int, host: str = "127.0.0.1") -> int:
 
 
 def main():
+    env_port = int(os.environ["PORT"]) if "PORT" in os.environ and os.environ["PORT"].isdigit() else None
+    is_cloud_env = bool(os.environ.get("RENDER") or os.environ.get("PORT") or os.environ.get("DOCKER_CONTAINER"))
+    default_host = "0.0.0.0" if is_cloud_env else "127.0.0.1"
+
     parser = argparse.ArgumentParser(description="Start TradingAgents Indian Equity Terminal")
-    parser.add_argument("--host", default="127.0.0.1", help="Host address (default: 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=None, help="Port number (default: auto-detect starting at 8000)")
-    parser.add_argument("--no-browser", action="store_true", help="Do not open browser automatically")
+    parser.add_argument("--host", default=default_host, help=f"Host address (default: {default_host})")
+    parser.add_argument("--port", type=int, default=env_port, help="Port number (default: $PORT or auto-detect starting at 8000)")
+    parser.add_argument("--no-browser", action="store_true", default=is_cloud_env, help="Do not open browser automatically")
     parser.add_argument("--reload", action="store_true", help="Enable uvicorn auto-reload")
     args = parser.parse_args()
 
@@ -99,8 +103,8 @@ def main():
     # Print terminal banner
     print_banner(args.host, port)
 
-    # Launch browser in background thread
-    if not args.no_browser:
+    # Launch browser in background thread (only in local interactive environments)
+    if not args.no_browser and not is_cloud_env:
         target_url = f"http://{args.host}:{port}"
         t = threading.Thread(target=open_browser_delayed, args=(target_url,), daemon=True)
         t.start()

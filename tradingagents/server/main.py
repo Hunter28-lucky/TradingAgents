@@ -525,12 +525,36 @@ def get_configured_models():
 
 
 # --- Frontend Static Files Serving ---
-frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist"))
-if os.path.exists(frontend_dist):
+def get_frontend_dist() -> Optional[str]:
+    """Resolves the compiled frontend distribution directory across multiple deployment structures."""
+    # 1. Environment variable if explicitly set
+    env_dir = os.getenv("FRONTEND_DIST_DIR")
+    if env_dir and os.path.isdir(env_dir):
+        return os.path.abspath(env_dir)
+
+    # 2. Relative to main.py repository source tree
+    repo_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist"))
+    if os.path.isdir(repo_dist):
+        return repo_dist
+
+    # 3. Relative to current working directory (Render / cloud container root)
+    cwd_dist = os.path.abspath(os.path.join(os.getcwd(), "frontend", "dist"))
+    if os.path.isdir(cwd_dist):
+        return cwd_dist
+
+    # 4. In package installation directory if packaged
+    pkg_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "dist"))
+    if os.path.isdir(pkg_dist):
+        return pkg_dist
+
+    return None
+
+
+frontend_dist = get_frontend_dist()
+if frontend_dist and os.path.exists(frontend_dist):
     assets_dir = os.path.join(frontend_dist, "assets")
     if os.path.exists(assets_dir):
         from fastapi.staticfiles import StaticFiles
-        from fastapi.responses import FileResponse
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
     @app.get("/{full_path:path}")
@@ -538,8 +562,28 @@ if os.path.exists(frontend_dist):
         from fastapi.responses import FileResponse
         if full_path.startswith("api"):
             raise HTTPException(status_code=404, detail="Endpoint not found")
+
+        # Serve direct static files (favicon.svg, icons.svg, etc.) if they exist in dist
+        if full_path:
+            specific_file = os.path.join(frontend_dist, full_path)
+            if os.path.isfile(specific_file):
+                return FileResponse(specific_file)
+
         index_file = os.path.join(frontend_dist, "index.html")
         if os.path.exists(index_file):
             return FileResponse(index_file)
         raise HTTPException(status_code=404, detail="Frontend build index.html not found")
+else:
+    @app.get("/")
+    async def serve_placeholder():
+        from fastapi.responses import HTMLResponse
+        return HTMLResponse(
+            "<html><head><title>TradingAgents API</title></head>"
+            "<body style='font-family:sans-serif;background:#090d16;color:#e2e8f0;padding:40px;text-align:center;'>"
+            "<h1 style='color:#38bdf8;'>TradingAgents Terminal API</h1>"
+            "<p>API server is online. Frontend production build was not detected in <code>frontend/dist</code>.</p>"
+            "<p>Run <code>npm run build</code> inside <code>frontend/</code> to generate the web dashboard.</p>"
+            "<p><a href='/docs' style='color:#60a5fa;'>Interactive API Documentation (/docs)</a></p>"
+            "</body></html>"
+        )
 

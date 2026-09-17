@@ -12,8 +12,8 @@ import pytz
 
 from tradingagents.providers.market_clock import IndianMarketClock
 
-STORAGE_DIR = os.path.expanduser("~/.tradingagents/storage")
-DB_PATH = os.path.join(STORAGE_DIR, "terminal.db")
+STORAGE_DIR = os.getenv("TRADINGAGENTS_STORAGE_DIR", os.path.expanduser("~/.tradingagents/storage"))
+DB_PATH = os.getenv("TRADINGAGENTS_DB_PATH", os.path.join(STORAGE_DIR, "terminal.db"))
 
 
 def get_connection() -> sqlite3.Connection:

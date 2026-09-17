@@ -23,11 +23,29 @@
   <a href="https://www.readme-i18n.com/TauricResearch/TradingAgents?lang=pt">Português</a> | 
   <a href="https://www.readme-i18n.com/TauricResearch/TradingAgents?lang=ru">Русский</a> | 
   <a href="https://www.readme-i18n.com/TauricResearch/TradingAgents?lang=zh">中文</a>
+<div align="center">
+  <a href="https://render.com/deploy?repo=https://github.com/Hunter28-lucky/TradingAgents" target="_blank">
+    <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render">
+  </a>
 </div>
+<br>
 
 ---
 
 # TradingAgents: Multi-Agents LLM Financial Trading Framework
+
+## 🌐 1-Step Cloud Deployment (Render.com)
+
+Deploy your own live instance of the TradingAgents Indian Market Terminal in one click:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Hunter28-lucky/TradingAgents)
+
+### How It Works:
+1. Click the **Deploy to Render** button above (or create a **New Blueprint Instance** on Render and select `Hunter28-lucky/TradingAgents`).
+2. Render automatically reads `render.yaml`, runs `./build.sh`, and binds the web server to `$PORT`.
+3. *(Optional)* Add your LLM keys (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, or `OPENAI_API_KEY`) in the Render dashboard under **Environment**.
+4. Real-time Indian market data, charts, fundamentals, technical indicators, and interactive analyst chat are immediately live!
+
 
 ## News
 - [2026-08] **TradingAgents v0.4.0** released with look-ahead / point-in-time fixes across FRED macro, social sentiment, and the decision-log memory; clearer decision signals; working CLI checkpoint resume; Trader price grounding; and the GPT-5.6 and GLM-5.3 models. See [CHANGELOG.md](CHANGELOG.md) for the full list.

@@ -8,7 +8,9 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
+# dist bundle is included for fast zero-lag cloud deployment
+!dist
+!dist/**
 dist-ssr
 *.local
 
