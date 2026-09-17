@@ -24,6 +24,7 @@ from tradingagents.providers.yahoo_provider import (
 )
 from tradingagents.providers.zerodha_provider import ZerodhaMarketDataProvider
 from tradingagents.server.analysis_runner import AnalysisRunnerManager
+from tradingagents.server.chat_engine import AIChatEngine, PERSONA_METADATA
 from tradingagents.storage.db import StorageManager
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -71,6 +72,18 @@ class WatchlistAddRequest(BaseModel):
     company_name: Optional[str] = None
     sector: Optional[str] = None
     notes: Optional[str] = None
+
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    symbol: str
+    persona: Optional[str] = "portfolio_manager"
+    analysis_id: Optional[str] = None
+    messages: List[ChatMessage]
 
 
 # --- Market & System Endpoints ---
@@ -250,6 +263,28 @@ def get_analysis_detail(analysis_id: str):
     if not res:
         raise HTTPException(status_code=404, detail="Analysis report not found")
     return res
+
+
+# --- Interactive AI Analyst Chat Endpoints ---
+
+@app.get("/api/chat/personas")
+def get_chat_personas():
+    """Returns available AI agent analyst personas and their descriptions."""
+    return {"personas": PERSONA_METADATA}
+
+
+@app.post("/api/chat")
+def chat_with_analysts(req: ChatRequest):
+    """Processes interactive user questions with full context of stock and analysis."""
+    valid_sym = validate_symbol(req.symbol)
+    msg_dicts = [{"role": m.role, "content": m.content} for m in req.messages]
+    result = AIChatEngine.generate_reply(
+        symbol=valid_sym,
+        messages=msg_dicts,
+        persona=req.persona or "portfolio_manager",
+        analysis_id=req.analysis_id,
+    )
+    return result
 
 
 # --- Decision Tracking & Evaluation Endpoints ---

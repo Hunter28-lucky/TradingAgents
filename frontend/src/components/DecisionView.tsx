@@ -1,13 +1,14 @@
 // frontend/src/components/DecisionView.tsx
 import React from 'react';
 import { AnalysisRecord } from '../types';
-import { Award, CheckCircle, ShieldAlert, Clock, Cpu, FileText } from 'lucide-react';
+import { Award, CheckCircle, ShieldAlert, Clock, Cpu, FileText, MessageSquare, Bot } from 'lucide-react';
 
 interface DecisionViewProps {
   analysis: AnalysisRecord | null;
+  onNavigateToChat?: (prompt?: string) => void;
 }
 
-export const DecisionView: React.FC<DecisionViewProps> = ({ analysis }) => {
+export const DecisionView: React.FC<DecisionViewProps> = ({ analysis, onNavigateToChat }) => {
   if (!analysis) {
     return (
       <div className="terminal-card" style={{ padding: '3rem', textAlign: 'center' }}>
@@ -178,6 +179,41 @@ export const DecisionView: React.FC<DecisionViewProps> = ({ analysis }) => {
               {invalidationTrigger}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Interactive AI Chat Callout */}
+      <div
+        className="terminal-card"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem',
+          padding: '1.25rem 1.5rem',
+          background: 'linear-gradient(90deg, rgba(0, 210, 255, 0.08) 0%, rgba(16, 21, 32, 0.95) 100%)',
+          border: '1px solid rgba(0, 210, 255, 0.35)',
+        }}
+      >
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+            <Bot size={18} style={{ color: 'var(--accent-primary, #00d2ff)' }} />
+            <span>Interrogate the Multi-Agent Research Desk</span>
+          </div>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: 1.4 }}>
+            Ask the Portfolio Manager or specialist analysts why this directive was issued, target probability, stop-loss invalidation, or balance sheet health.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            className="btn-primary"
+            onClick={() => onNavigateToChat?.('Why did you recommend this directive?')}
+            style={{ padding: '8px 16px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <MessageSquare size={14} /> Chat with Analysts
+          </button>
         </div>
       </div>
 

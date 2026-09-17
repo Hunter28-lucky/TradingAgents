@@ -17,6 +17,7 @@ import { SentimentView } from './SentimentView';
 import { DebateView } from './DebateView';
 import { RiskView } from './RiskView';
 import { DecisionView } from './DecisionView';
+import { AIChatView } from './AIChatView';
 import {
   TrendingUp,
   TrendingDown,
@@ -30,6 +31,7 @@ import {
   Award,
   Clock,
   RefreshCw,
+  Bot,
 } from 'lucide-react';
 
 interface StockResearchViewProps {
@@ -46,7 +48,8 @@ type TabKey =
   | 'sentiment'
   | 'debate'
   | 'risk'
-  | 'decision';
+  | 'decision'
+  | 'chat';
 
 export const StockResearchView: React.FC<StockResearchViewProps> = ({
   symbol,
@@ -54,6 +57,7 @@ export const StockResearchView: React.FC<StockResearchViewProps> = ({
   activeAnalysis,
 }) => {
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
+  const [chatPrompt, setChatPrompt] = useState<string>('');
   const [quote, setQuote] = useState<Quote | null>(null);
   const [technicals, setTechnicals] = useState<TechnicalIndicators | null>(null);
   const [fundamentals, setFundamentals] = useState<Fundamentals | null>(null);
@@ -153,7 +157,15 @@ export const StockResearchView: React.FC<StockResearchViewProps> = ({
     { key: 'debate', label: 'Research Debate', icon: <Scale size={15} /> },
     { key: 'risk', label: 'Risk Analysis', icon: <ShieldAlert size={15} /> },
     { key: 'decision', label: 'AI Decision', icon: <Award size={15} /> },
+    { key: 'chat', label: 'AI Analyst Chat', icon: <Bot size={15} /> },
   ];
+
+  const handleOpenChat = (prompt?: string) => {
+    if (prompt) {
+      setChatPrompt(prompt);
+    }
+    setActiveTab('chat');
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -303,7 +315,20 @@ export const StockResearchView: React.FC<StockResearchViewProps> = ({
       )}
 
       {activeTab === 'decision' && (
-        <DecisionView analysis={activeAnalysis} />
+        <DecisionView analysis={activeAnalysis} onNavigateToChat={handleOpenChat} />
+      )}
+
+      {activeTab === 'chat' && (
+        <AIChatView
+          symbol={symbol}
+          quote={quote}
+          activeAnalysis={activeAnalysis}
+          technicals={technicals}
+          fundamentals={fundamentals}
+          news={news}
+          sentiment={sentiment}
+          initialPrompt={chatPrompt}
+        />
       )}
     </div>
   );

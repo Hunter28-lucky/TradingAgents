@@ -311,3 +311,46 @@ export interface DataSourceItem {
   auth_type: string;
   status_message?: string;
 }
+
+export type AnalystPersonaKey =
+  | 'portfolio_manager'
+  | 'technical'
+  | 'fundamental'
+  | 'risk'
+  | 'bull'
+  | 'bear';
+
+export interface PersonaInfo {
+  title: string;
+  badge: string;
+  description: string;
+  icon: string;
+}
+
+export interface ChatMessage {
+  id?: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  persona_title?: string;
+  persona_badge?: string;
+  timestamp_ist?: string;
+  sources_consulted?: string[];
+}
+
+export interface ChatRequest {
+  symbol: string;
+  persona?: string;
+  analysis_id?: string;
+  messages: Array<{ role: string; content: string }>;
+}
+
+export interface ChatResponse {
+  symbol: string;
+  persona: string;
+  persona_title: string;
+  persona_badge: string;
+  reply: string;
+  sources_consulted: string[];
+  timestamp_ist: string;
+}
+

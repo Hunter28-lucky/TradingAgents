@@ -255,8 +255,11 @@ class StorageManager:
         results: List[Dict[str, Any]] = []
         for r in rows:
             item = dict(r)
-            for jc in ["bull_case", "bear_case", "risk_analysis"]:
-                if item.get(jc):
+            for jc in [
+                "bull_case", "bear_case", "risk_analysis", "technical_summary",
+                "fundamental_summary", "news_summary", "sentiment_summary", "sources_metadata"
+            ]:
+                if item.get(jc) and isinstance(item[jc], str):
                     try:
                         item[jc] = json.loads(item[jc])
                     except Exception:

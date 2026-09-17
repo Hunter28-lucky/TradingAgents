@@ -143,4 +143,20 @@ export const api = {
     const data = await handleResponse<{ models: any[] }>(res);
     return data.models || [];
   },
+
+  async getChatPersonas(): Promise<Record<string, any>> {
+    const res = await fetch(`${API_BASE}/chat/personas`);
+    const data = await handleResponse<{ personas: Record<string, any> }>(res);
+    return data.personas || {};
+  },
+
+  async sendChatMessage(req: import('../types').ChatRequest): Promise<import('../types').ChatResponse> {
+    const res = await fetch(`${API_BASE}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+    });
+    return handleResponse<import('../types').ChatResponse>(res);
+  },
 };
+
