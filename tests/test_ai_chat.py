@@ -134,3 +134,61 @@ def test_chat_invalid_ticker_rejected():
     resp = client.post("/api/chat", json=req)
     assert resp.status_code == 400
 
+
+def test_chat_holding_time():
+    """Verify holding time questions return mathematical ATR drift horizons and no glitches."""
+    req = {
+        "symbol": "DEEPINDS.NS",
+        "persona": "technical",
+        "messages": [{"role": "user", "content": "so i want to know aboout the time to hold"}],
+    }
+    resp = client.post("/api/chat", json=req)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["persona"] == "technical"
+    reply = data["reply"]
+    assert "Tactical Technical Horizon" in reply
+    assert "Trading Sessions" in reply
+    assert "ATR Drift Velocity" in reply
+    assert "Nonex" not in reply
+    assert "None%" not in reply
+    assert "Unavailable from source" not in reply
+
+
+def test_no_none_or_nonex_in_replies():
+    """Verify that even with missing fundamentals, answers never display Nonex or None%."""
+    req = {
+        "symbol": "DEEPINDS.NS",
+        "persona": "fundamental",
+        "messages": [{"role": "user", "content": "Explain the balance sheet debt and P/E valuation multiples."}],
+    }
+    resp = client.post("/api/chat", json=req)
+    assert resp.status_code == 200
+    data = resp.json()
+    reply = data["reply"]
+    assert "Nonex" not in reply
+    assert "None%" not in reply
+    assert "Debt/Equity of None" not in reply
+    assert "Unavailable from source" not in reply
+
+
+def test_key_config_and_status_endpoints():
+    """Verify /api/system/config-key and /api/system/llm-status endpoints."""
+    # Test configuring key
+    config_req = {
+        "provider": "google",
+        "api_key": "AIzaSyFakeKeyForTestingPurposes123",
+        "model": "gemini-2.5-flash",
+    }
+    resp = client.post("/api/system/config-key", json=config_req)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "success"
+
+    # Test status endpoint
+    status_resp = client.get("/api/system/llm-status")
+    assert status_resp.status_code == 200
+    status_data = status_resp.json()
+    assert status_data["is_remote_llm_active"] is True
+    assert status_data["active_provider"] == "Google Gemini"
+

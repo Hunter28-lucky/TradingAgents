@@ -84,6 +84,15 @@ class ChatRequest(BaseModel):
     persona: Optional[str] = "portfolio_manager"
     analysis_id: Optional[str] = None
     messages: List[ChatMessage]
+    api_key: Optional[str] = None
+    provider: Optional[str] = None
+    model: Optional[str] = None
+
+
+class KeyConfigRequest(BaseModel):
+    provider: str
+    api_key: str
+    model: Optional[str] = None
 
 
 # --- Market & System Endpoints ---
@@ -318,8 +327,77 @@ def chat_with_analysts(req: ChatRequest):
         messages=msg_dicts,
         persona=req.persona or "portfolio_manager",
         analysis_id=req.analysis_id,
+        api_key=req.api_key,
+        provider=req.provider,
+        model=req.model,
     )
     return result
+
+
+@app.post("/api/system/config-key")
+def configure_api_key(req: KeyConfigRequest):
+    """Configures and activates an AI provider key dynamically."""
+    prov = req.provider.lower().strip()
+    key = req.api_key.strip()
+    if not key:
+        raise HTTPException(status_code=400, detail="API key cannot be empty")
+
+    if prov in ("google", "gemini"):
+        os.environ["GEMINI_API_KEY"] = key
+        os.environ["GOOGLE_API_KEY"] = key
+        if req.model:
+            os.environ["GEMINI_MODEL"] = req.model
+    elif prov == "openrouter":
+        os.environ["OPENROUTER_API_KEY"] = key
+        if req.model:
+            os.environ["OPENROUTER_MODEL"] = req.model
+    elif prov == "openai":
+        os.environ["OPENAI_API_KEY"] = key
+        if req.model:
+            os.environ["OPENAI_MODEL"] = req.model
+    elif prov == "anthropic":
+        os.environ["ANTHROPIC_API_KEY"] = key
+        if req.model:
+            os.environ["ANTHROPIC_MODEL"] = req.model
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported AI provider: {req.provider}")
+
+    return {
+        "status": "success",
+        "provider": prov,
+        "message": f"Successfully activated {req.provider} key for real-time AI conversation.",
+    }
+
+
+@app.get("/api/system/llm-status")
+def get_llm_status():
+    """Returns the currently active AI provider and key status without exposing secrets."""
+    active_prov = "Institutional Quantitative Engine (Local)"
+    is_remote = False
+    model_name = "Specialist Multi-Agent Reasoner"
+
+    if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
+        active_prov = "Google Gemini"
+        is_remote = True
+        model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    elif os.getenv("OPENROUTER_API_KEY"):
+        active_prov = "OpenRouter Gateway"
+        is_remote = True
+        model_name = os.getenv("OPENROUTER_MODEL", "nvidia/nemotron-3.5-lightning:free")
+    elif os.getenv("OPENAI_API_KEY"):
+        active_prov = "OpenAI"
+        is_remote = True
+        model_name = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    elif os.getenv("ANTHROPIC_API_KEY"):
+        active_prov = "Anthropic"
+        is_remote = True
+        model_name = os.getenv("ANTHROPIC_MODEL", "claude-3-5-haiku-20241022")
+
+    return {
+        "is_remote_llm_active": is_remote,
+        "active_provider": active_prov,
+        "active_model": model_name,
+    }
 
 
 # --- Decision Tracking & Evaluation Endpoints ---

@@ -344,6 +344,9 @@ export interface ChatRequest {
   persona?: string;
   analysis_id?: string;
   messages: Array<{ role: string; content: string }>;
+  api_key?: string;
+  provider?: string;
+  model?: string;
 }
 
 export interface ChatResponse {
@@ -354,5 +357,7 @@ export interface ChatResponse {
   reply: string;
   sources_consulted: string[];
   timestamp_ist: string;
+  provider_used?: string;
+  model_used?: string;
 }
 

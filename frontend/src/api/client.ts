@@ -158,5 +158,19 @@ export const api = {
     });
     return handleResponse<import('../types').ChatResponse>(res);
   },
+
+  async configureApiKey(provider: string, api_key: string, model?: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/system/config-key`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider, api_key, model }),
+    });
+    return handleResponse<any>(res);
+  },
+
+  async getLlmStatus(): Promise<{ is_remote_llm_active: boolean; active_provider: string; active_model: string }> {
+    const res = await fetch(`${API_BASE}/system/llm-status`);
+    return handleResponse<{ is_remote_llm_active: boolean; active_provider: string; active_model: string }>(res);
+  },
 };
 
