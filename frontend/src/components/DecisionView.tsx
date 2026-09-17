@@ -2,6 +2,8 @@
 import React from 'react';
 import { AnalysisRecord } from '../types';
 import { Award, CheckCircle, ShieldAlert, Clock, Cpu, FileText, MessageSquare, Bot } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+
 
 interface DecisionViewProps {
   analysis: AnalysisRecord | null;
@@ -9,11 +11,13 @@ interface DecisionViewProps {
 }
 
 export const DecisionView: React.FC<DecisionViewProps> = ({ analysis, onNavigateToChat }) => {
+  const { t, translateDirective } = useLanguage();
+
   if (!analysis) {
     return (
       <div className="terminal-card" style={{ padding: '3rem', textAlign: 'center' }}>
         <div style={{ color: 'var(--text-muted)' }}>
-          Run an AI research analysis to synthesize the final decision and thesis for this symbol.
+          {t('decision.no_analysis', 'Run an AI research analysis to synthesize the final decision and thesis for this symbol.')}
         </div>
       </div>
     );
@@ -60,37 +64,37 @@ export const DecisionView: React.FC<DecisionViewProps> = ({ analysis, onNavigate
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <div style={{ fontSize: '0.78rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-              Synthesized Portfolio Manager Directive
+              {t('decision.synthesized_directive', 'Synthesized Portfolio Manager Directive')}
             </div>
             <div style={{ fontSize: '2.2rem', fontWeight: 900, color: signalColor, fontFamily: 'var(--font-display)', marginTop: '4px', letterSpacing: '-0.02em' }}>
-              {analysis.signal}
+              {translateDirective(analysis.signal)}
             </div>
             <div style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-              Time Horizon: <strong style={{ color: 'var(--text-primary)' }}>{analysis.time_horizon}</strong>
+              {t('decision.time_horizon', 'Time Horizon')}: <strong style={{ color: 'var(--text-primary)' }}>{analysis.time_horizon}</strong>
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: '1.5rem', fontFamily: 'var(--font-mono)', flexWrap: 'wrap' }}>
             <div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>AI CONVICTION</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('decision.conviction', 'AI CONVICTION')}</div>
               <div style={{ fontSize: '1.25rem', fontWeight: 800, color: signalColor, marginTop: '2px' }}>
                 {conviction}%
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>EVIDENCE QUALITY</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('decision.evidence_quality', 'EVIDENCE QUALITY')}</div>
               <div style={{ fontSize: '1.1rem', fontWeight: 700, color: qualityColor, marginTop: '2px' }}>
                 {analysis.evidence_quality}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>PRICE AT ANALYSIS</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('decision.price_at_analysis', 'PRICE AT ANALYSIS')}</div>
               <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
                 ₹{analysis.price_at_analysis?.toFixed(2) || 'N/A'}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>EXECUTION TIME</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('decision.execution_time', 'EXECUTION TIME')}</div>
               <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-cyan)', marginTop: '2px' }}>
                 {analysis.execution_duration_sec}s
               </div>
@@ -103,7 +107,7 @@ export const DecisionView: React.FC<DecisionViewProps> = ({ analysis, onNavigate
       <div className="terminal-card" style={{ borderTop: `3px solid ${signalColor}` }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Award size={18} color={signalColor} /> Actionable Execution Direction & Targets
+            <Award size={18} color={signalColor} /> {t('decision.trade_bracket', 'Tactical Trade Execution Bracket')}
           </h3>
           <span className="pill pill-live" style={{ fontSize: '0.72rem' }}>
             Deterministic Calculation
@@ -113,7 +117,7 @@ export const DecisionView: React.FC<DecisionViewProps> = ({ analysis, onNavigate
         <div className="grid-4" style={{ gap: '1rem', marginBottom: '1.25rem' }}>
           {/* Target Price */}
           <div style={{ background: 'rgba(0, 230, 118, 0.05)', border: '1px solid rgba(0, 230, 118, 0.2)', padding: '12px', borderRadius: '6px' }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>TARGET PRICE</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{t('decision.target_price', 'TARGET PRICE')}</div>
             <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-bullish)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
               {targetPrice ? `₹${Number(targetPrice).toFixed(2)}` : 'N/A'}
             </div>
@@ -126,7 +130,7 @@ export const DecisionView: React.FC<DecisionViewProps> = ({ analysis, onNavigate
 
           {/* Stop Loss */}
           <div style={{ background: 'rgba(255, 23, 68, 0.05)', border: '1px solid rgba(255, 23, 68, 0.2)', padding: '12px', borderRadius: '6px' }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>STOP LOSS</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{t('decision.stop_loss', 'STOP LOSS')}</div>
             <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-bearish)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
               {stopLoss ? `₹${Number(stopLoss).toFixed(2)}` : 'N/A'}
             </div>
@@ -139,7 +143,7 @@ export const DecisionView: React.FC<DecisionViewProps> = ({ analysis, onNavigate
 
           {/* Risk : Reward */}
           <div style={{ background: 'rgba(0, 229, 255, 0.05)', border: '1px solid rgba(0, 229, 255, 0.2)', padding: '12px', borderRadius: '6px' }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>RISK / REWARD</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{t('decision.rr_ratio', 'RISK / REWARD')}</div>
             <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-accent-cyan)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
               {rrRatio}
             </div>
@@ -150,7 +154,7 @@ export const DecisionView: React.FC<DecisionViewProps> = ({ analysis, onNavigate
 
           {/* Entry Zone */}
           <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-color)', padding: '12px', borderRadius: '6px' }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>RECOMMENDED ENTRY</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{t('decision.entry_zone', 'RECOMMENDED ENTRY')}</div>
             <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
               {entryZone}
             </div>
@@ -164,7 +168,7 @@ export const DecisionView: React.FC<DecisionViewProps> = ({ analysis, onNavigate
         <div className="grid-2" style={{ gap: '1rem' }}>
           <div style={{ padding: '10px 14px', background: 'rgba(0, 230, 118, 0.04)', borderLeft: '3px solid var(--color-bullish)', borderRadius: '4px' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--color-bullish)', fontWeight: 700, textTransform: 'uppercase' }}>
-              Primary Upside Catalyst
+              {t('decision.primary_catalyst', 'Primary Upside Catalyst')}
             </div>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: 1.5 }}>
               {keyCatalyst}
@@ -173,7 +177,7 @@ export const DecisionView: React.FC<DecisionViewProps> = ({ analysis, onNavigate
 
           <div style={{ padding: '10px 14px', background: 'rgba(255, 23, 68, 0.04)', borderLeft: '3px solid var(--color-bearish)', borderRadius: '4px' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--color-bearish)', fontWeight: 700, textTransform: 'uppercase' }}>
-              Critical Invalidation Trigger
+              {t('decision.invalidation_trigger', 'Critical Invalidation Trigger')}
             </div>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: 1.5 }}>
               {invalidationTrigger}
@@ -181,6 +185,7 @@ export const DecisionView: React.FC<DecisionViewProps> = ({ analysis, onNavigate
           </div>
         </div>
       </div>
+
 
       {/* Interactive AI Chat Callout */}
       <div

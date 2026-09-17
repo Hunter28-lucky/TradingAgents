@@ -2,6 +2,7 @@
 import React from 'react';
 import { TechnicalIndicators } from '../types';
 import { Activity, ShieldAlert, ArrowUpRight, ArrowDownRight, Compass } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface TechnicalsTableProps {
   technicals: TechnicalIndicators | null;
@@ -9,12 +10,14 @@ interface TechnicalsTableProps {
 }
 
 export const TechnicalsTable: React.FC<TechnicalsTableProps> = ({ technicals, loading }) => {
+  const { t, isHindi } = useLanguage();
+
   if (loading) {
     return (
       <div className="terminal-card" style={{ textAlign: 'center', padding: '3rem' }}>
         <Activity size={28} className="spin" color="var(--color-accent-cyan)" />
         <div style={{ marginTop: '1rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-          Computing deterministic indicators from OHLCV...
+          {t('tech.computing', 'Computing deterministic indicators from OHLCV...')}
         </div>
       </div>
     );
@@ -25,7 +28,7 @@ export const TechnicalsTable: React.FC<TechnicalsTableProps> = ({ technicals, lo
       <div className="terminal-card" style={{ padding: '2rem', textAlign: 'center' }}>
         <ShieldAlert size={24} color="var(--color-warning)" />
         <div style={{ marginTop: '0.5rem', color: 'var(--text-secondary)' }}>
-          Technical indicators unavailable for this symbol.
+          {t('tech.unavailable', 'Technical indicators unavailable for this symbol.')}
         </div>
       </div>
     );
@@ -38,6 +41,10 @@ export const TechnicalsTable: React.FC<TechnicalsTableProps> = ({ technicals, lo
       : technicals.overall_bias === 'BEARISH'
       ? 'var(--color-bearish)'
       : 'var(--color-accent-cyan)';
+
+  const biasLabel = isHindi
+    ? (technicals.overall_bias === 'BULLISH' ? 'तेजी (BULLISH)' : technicals.overall_bias === 'BEARISH' ? 'मंदी (BEARISH)' : 'तटस्थ (NEUTRAL)')
+    : technicals.overall_bias;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -53,16 +60,16 @@ export const TechnicalsTable: React.FC<TechnicalsTableProps> = ({ technicals, lo
       >
         <div>
           <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-            Deterministic Technical Bias
+            {t('tech.bias_title', 'Deterministic Technical Bias')}
           </div>
           <div style={{ fontSize: '1.4rem', fontWeight: 800, color: biasColor, fontFamily: 'var(--font-display)', marginTop: '2px' }}>
-            {technicals.overall_bias}
+            {biasLabel}
           </div>
         </div>
 
         <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-          <div>Data Range: <strong style={{ color: 'var(--text-primary)' }}>{technicals.data_range}</strong></div>
-          <div style={{ marginTop: '2px' }}>Method: <strong style={{ color: 'var(--text-cyan)' }}>Zero-Hallucination Code Execution</strong></div>
+          <div>{t('tech.data_range', 'Data Range')}: <strong style={{ color: 'var(--text-primary)' }}>{technicals.data_range}</strong></div>
+          <div style={{ marginTop: '2px' }}><strong style={{ color: 'var(--text-cyan)' }}>{t('tech.method', 'Method: Zero-Hallucination Code Execution')}</strong></div>
         </div>
       </div>
 
@@ -71,8 +78,9 @@ export const TechnicalsTable: React.FC<TechnicalsTableProps> = ({ technicals, lo
         {/* Momentum & Oscillators */}
         <div className="terminal-card">
           <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-primary)' }}>
-            Momentum & Oscillators
+            {t('tech.momentum', 'Momentum & Oscillators')}
           </h3>
+
           <table className="terminal-table">
             <tbody>
               <tr>
@@ -111,7 +119,7 @@ export const TechnicalsTable: React.FC<TechnicalsTableProps> = ({ technicals, lo
         {/* Moving Averages */}
         <div className="terminal-card">
           <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-primary)' }}>
-            Moving Averages Structure
+            {t('tech.trend', 'Trend Following & Moving Averages')}
           </h3>
           <table className="terminal-table">
             <thead>
@@ -157,7 +165,7 @@ export const TechnicalsTable: React.FC<TechnicalsTableProps> = ({ technicals, lo
         {/* Volatility & Bollinger Bands */}
         <div className="terminal-card">
           <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-primary)' }}>
-            Volatility & Bands
+            {t('tech.volatility', 'Volatility & Price Bands')}
           </h3>
           <table className="terminal-table">
             <tbody>
@@ -193,8 +201,9 @@ export const TechnicalsTable: React.FC<TechnicalsTableProps> = ({ technicals, lo
         {/* Pivot Points */}
         <div className="terminal-card">
           <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-primary)' }}>
-            Support & Resistance (Pivot Levels)
+            {t('tech.pivots', 'Classical Pivot Defense Levels')}
           </h3>
+
           <table className="terminal-table">
             <thead>
               <tr>

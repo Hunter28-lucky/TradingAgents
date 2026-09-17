@@ -192,3 +192,30 @@ def test_key_config_and_status_endpoints():
     assert status_data["is_remote_llm_active"] is True
     assert status_data["active_provider"] == "Google Gemini"
 
+
+def test_chat_hindi_translation(monkeypatch):
+    """Verify that language='hi' returns Hindi explanations while preserving technical acronyms."""
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    payload = {
+        "symbol": "RELIANCE",
+        "persona": "technical",
+        "language": "hi",
+        "messages": [{"role": "user", "content": "RSI और मूविंग एवरेज क्या संकेत दे रहे हैं?"}],
+    }
+    resp = client.post("/api/chat", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["symbol"].startswith("RELIANCE")
+    reply = data["reply"]
+    # Verify technical terms remain in standard English / Latin script
+    assert "RSI" in reply
+    # Verify Indian currency symbol preserved
+    assert "₹" in reply
+    # Verify Hindi translations exist
+    assert any(w in reply for w in ["तकनीकी", "विश्लेषक", "मूल्य", "सपोर्ट", "प्रतिरोध", "अस्थिरता", "संकेतक"])
+
+

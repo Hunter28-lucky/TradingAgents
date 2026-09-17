@@ -33,6 +33,8 @@ import {
   RefreshCw,
   Bot,
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+
 
 interface StockResearchViewProps {
   symbol: string;
@@ -56,6 +58,7 @@ export const StockResearchView: React.FC<StockResearchViewProps> = ({
   onLaunchAnalysis,
   activeAnalysis,
 }) => {
+  const { t, translateProvenance } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [chatPrompt, setChatPrompt] = useState<string>('');
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -149,15 +152,15 @@ export const StockResearchView: React.FC<StockResearchViewProps> = ({
   const isPos = (quote?.change ?? 0) >= 0;
 
   const tabs: Array<{ key: TabKey; label: string; icon: React.ReactNode }> = [
-    { key: 'overview', label: 'Overview & Charts', icon: <BarChart2 size={15} /> },
-    { key: 'technical', label: 'Technical Analysis', icon: <TrendingUp size={15} /> },
-    { key: 'fundamental', label: 'Fundamental Analysis', icon: <FileText size={15} /> },
-    { key: 'news', label: 'News Feed', icon: <Newspaper size={15} /> },
-    { key: 'sentiment', label: 'Sentiment', icon: <MessageSquare size={15} /> },
-    { key: 'debate', label: 'Research Debate', icon: <Scale size={15} /> },
-    { key: 'risk', label: 'Risk Analysis', icon: <ShieldAlert size={15} /> },
-    { key: 'decision', label: 'AI Decision', icon: <Award size={15} /> },
-    { key: 'chat', label: 'AI Analyst Chat', icon: <Bot size={15} /> },
+    { key: 'overview', label: t('tab.overview', 'Overview & Charts'), icon: <BarChart2 size={15} /> },
+    { key: 'technical', label: t('tab.technical', 'Technical Analysis'), icon: <TrendingUp size={15} /> },
+    { key: 'fundamental', label: t('tab.fundamental', 'Fundamental Analysis'), icon: <FileText size={15} /> },
+    { key: 'news', label: t('tab.news', 'News Feed'), icon: <Newspaper size={15} /> },
+    { key: 'sentiment', label: t('tab.sentiment', 'Sentiment'), icon: <MessageSquare size={15} /> },
+    { key: 'debate', label: t('tab.debate', 'Research Debate'), icon: <Scale size={15} /> },
+    { key: 'risk', label: t('tab.risk', 'Risk Analysis'), icon: <ShieldAlert size={15} /> },
+    { key: 'decision', label: t('tab.decision', 'AI Decision'), icon: <Award size={15} /> },
+    { key: 'chat', label: t('tab.chat', 'AI Analyst Chat'), icon: <Bot size={15} /> },
   ];
 
   const handleOpenChat = (prompt?: string) => {
@@ -200,7 +203,7 @@ export const StockResearchView: React.FC<StockResearchViewProps> = ({
                   border: '1px solid rgba(56, 189, 248, 0.3)',
                 }}
               >
-                Official Ticker: {quote.resolved_symbol}
+                {t('research.official_ticker', 'Official Ticker')}: {quote.resolved_symbol}
               </span>
             )}
             {quote?.provenance && (
@@ -209,16 +212,16 @@ export const StockResearchView: React.FC<StockResearchViewProps> = ({
                   quote.provenance.status === 'LIVE' ? 'pill-live' : 'pill-historical'
                 }`}
               >
-                {quote.provenance.status}
+                {translateProvenance(quote.provenance.status)}
               </span>
             )}
           </div>
           <div style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
             {loadingQuote
-              ? 'Loading company details...'
+              ? t('research.loading_details', 'Loading company details...')
               : (quote?.company_name || symbol)}
             {quote?.resolved_symbol && quote.resolved_symbol !== symbol && (
-              <span style={{ color: '#38bdf8', fontSize: '0.82rem' }}> (Matched from {symbol})</span>
+              <span style={{ color: '#38bdf8', fontSize: '0.82rem' }}> ({t('research.matched_from', 'Matched from')} {symbol})</span>
             )}
             {quote?.sector && <span style={{ color: 'var(--text-muted)' }}> • {quote.sector}</span>}
           </div>
@@ -227,13 +230,15 @@ export const StockResearchView: React.FC<StockResearchViewProps> = ({
         {/* Price Box */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
           <div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>LAST TRADED PRICE</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+              {t('research.last_traded_price', 'LAST TRADED PRICE')}
+            </div>
             <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
               {loadingQuote
-                ? 'Loading...'
+                ? '...'
                 : quote?.price != null
                 ? `₹${quote.price.toLocaleString('en-IN')}`
-                : 'Unavailable'}
+                : t('research.unavailable', 'Unavailable')}
             </div>
             <div
               style={{
@@ -258,7 +263,7 @@ export const StockResearchView: React.FC<StockResearchViewProps> = ({
             style={{ padding: '12px 20px', fontSize: '0.9rem' }}
             onClick={() => onLaunchAnalysis(symbol)}
           >
-            <Cpu size={16} /> Run AI Research Analysis
+            <Cpu size={16} /> {t('research.run_analysis', 'Run AI Research Analysis')}
           </button>
         </div>
       </div>
@@ -283,25 +288,33 @@ export const StockResearchView: React.FC<StockResearchViewProps> = ({
           {/* Quick Metrics Bar */}
           <div className="grid-4" style={{ marginBottom: '1rem' }}>
             <div className="terminal-card">
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>DAY RANGE</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                {t('watchlist.col_day_range', 'DAY RANGE')}
+              </div>
               <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', marginTop: '4px' }}>
                 ₹{quote?.day_low ?? 'N/A'} - ₹{quote?.day_high ?? 'N/A'}
               </div>
             </div>
             <div className="terminal-card">
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>52-WEEK RANGE</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                {t('watchlist.col_52w_range', '52-WEEK RANGE')}
+              </div>
               <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', marginTop: '4px' }}>
                 ₹{quote?.week_52_low ?? 'N/A'} - ₹{quote?.week_52_high ?? 'N/A'}
               </div>
             </div>
             <div className="terminal-card">
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>VOLUME</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                VOLUME
+              </div>
               <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', marginTop: '4px' }}>
                 {quote?.volume ? quote.volume.toLocaleString('en-IN') : 'N/A'}
               </div>
             </div>
             <div className="terminal-card">
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>P/E RATIO (TTM)</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                P/E RATIO (TTM)
+              </div>
               <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', marginTop: '4px' }}>
                 {quote?.pe_ratio ? `${quote.pe_ratio.toFixed(2)}x` : 'N/A'}
               </div>
@@ -311,6 +324,7 @@ export const StockResearchView: React.FC<StockResearchViewProps> = ({
           <CandlestickChart symbol={symbol} />
         </div>
       )}
+
 
       {activeTab === 'technical' && (
         <TechnicalsTable technicals={technicals} loading={loadingTech} />

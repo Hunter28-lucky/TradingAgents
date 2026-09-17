@@ -1,8 +1,9 @@
 // frontend/src/components/Header.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, TrendingUp, TrendingDown, Clock, ShieldCheck, Activity } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, Clock, ShieldCheck, Activity, Globe } from 'lucide-react';
 import { MarketOverview, Quote } from '../types';
 import { api } from '../api/client';
+import { useLanguage } from '../context/LanguageContext';
 
 interface HeaderProps {
   overview: MarketOverview | null;
@@ -11,6 +12,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ overview, onSelectSymbol, selectedSymbol }) => {
+  const { t, language, isHindi, toggleLanguage, translateSession } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -63,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({ overview, onSelectSymbol, select
               key={idx.symbol}
               className="ticker-item"
               onClick={() => onSelectSymbol(idx.symbol)}
-              title={`Click to analyze ${idx.name}`}
+              title={`${t('header.click_to_analyze', 'Click to analyze')} ${idx.name}`}
             >
               <span className="name">{idx.name}</span>
               <span className="price">
@@ -91,8 +93,8 @@ export const Header: React.FC<HeaderProps> = ({ overview, onSelectSymbol, select
         <div className="brand-section">
           <div className="brand-logo">TA</div>
           <div>
-            <div className="brand-title">TradingAgents</div>
-            <div className="brand-sub">Indian Equity Decision Terminal</div>
+            <div className="brand-title">{t('brand.title', 'TradingAgents')}</div>
+            <div className="brand-sub">{t('brand.sub', 'Indian Equity Decision Terminal')}</div>
           </div>
         </div>
 
@@ -103,7 +105,7 @@ export const Header: React.FC<HeaderProps> = ({ overview, onSelectSymbol, select
             <input
               type="text"
               className="search-input"
-              placeholder="Search symbol (e.g. RELIANCE, TCS, INFY, NIFTY 50)..."
+              placeholder={t('header.search_placeholder', 'Search symbol (e.g. RELIANCE, TCS, INFY, NIFTY 50)...')}
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
@@ -142,13 +144,45 @@ export const Header: React.FC<HeaderProps> = ({ overview, onSelectSymbol, select
           )}
         </div>
 
-        {/* Market Status Pill & Clock */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        {/* Language Switcher, Market Status Pill & Clock */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          {/* Top Hindi / English Toggle Button */}
+          <button
+            id="btn-language-toggle"
+            onClick={toggleLanguage}
+            title={t('header.toggle_tooltip', 'Switch entire terminal to Hindi / English')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: isHindi
+                ? 'linear-gradient(135deg, rgba(255, 153, 51, 0.22) 0%, rgba(19, 136, 8, 0.22) 100%)'
+                : 'rgba(0, 240, 255, 0.12)',
+              border: isHindi
+                ? '1px solid rgba(255, 153, 51, 0.7)'
+                : '1px solid rgba(0, 240, 255, 0.45)',
+              borderRadius: '24px',
+              padding: '6px 14px',
+              color: isHindi ? '#ffb74d' : 'var(--text-cyan)',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-display)',
+              transition: 'all 0.2s ease',
+              boxShadow: isHindi
+                ? '0 0 14px rgba(255, 153, 51, 0.25)'
+                : '0 0 12px rgba(0, 240, 255, 0.18)',
+            }}
+          >
+            <span style={{ fontSize: '1rem', lineHeight: 1 }}>{isHindi ? '🇬🇧' : '🇮🇳'}</span>
+            <span>{isHindi ? 'Switch to English' : 'हिंदी में बदलें'}</span>
+          </button>
+
           <div
             className={`pill ${overview?.is_market_open ? 'pill-live' : 'pill-historical'}`}
             title={overview?.session_label}
           >
-            {overview?.session_label || 'Indian Market Session'}
+            {translateSession(overview?.session_label || t('header.market_session_default', 'Indian Market Session'))}
           </div>
 
           <div
@@ -169,3 +203,4 @@ export const Header: React.FC<HeaderProps> = ({ overview, onSelectSymbol, select
     </>
   );
 };
+

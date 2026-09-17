@@ -118,6 +118,101 @@ def _clean_catalyst(val: Any, sector: str = "Equity") -> str:
     return val.strip()
 
 
+def _translate_reasoner_output_to_hindi(text: str) -> str:
+    """Translates deterministic financial reasoner responses to natural Hindi
+
+    while strictly preserving technical financial terms, acronyms (RSI, MACD, EMA, SMA, ATR, P/E, PEG, ROE, etc.),
+    tickers, and price figures in standard English.
+    """
+    if not text:
+        return text
+
+    replacements = [
+        ("### ⏱️ Senior Technical Analyst — Trade Horizon & Holding Period Blueprint for", "### ⏱️ वरिष्ठ तकनीकी विश्लेषक (Senior Technical Analyst) — ट्रेड समयसीमा और होल्डिंग योजना:"),
+        ("### 🛡️ Chief Risk Officer — Exposure Duration & Time-Stop Rules for", "### 🛡️ मुख्य जोखिम अधिकारी (Chief Risk Officer) — एक्सपोज़र अवधि और समय-स्टॉप नियम:"),
+        ("### 📑 Senior Fundamental Analyst — Investment Cycle & Earnings Horizon for", "### 📑 वरिष्ठ मौलिक विश्लेषक (Senior Fundamental Analyst) — निवेश चक्र और कमाई का क्षितिज:"),
+        ("### 🚀 Bullish Research Strategist — Breakout Velocity & Target Timing on", "### 🚀 तेजी अनुसंधान रणनीतिकार (Bullish Strategist) — ब्रेकआउट गति और लक्ष्य समय:"),
+        ("### 🐻 Bearish Research Strategist — Overhead Distribution & Holding Hazards on", "### 🐻 मंदी अनुसंधान रणनीतिकार (Bearish Strategist) — ऊपरी वितरण और होल्डिंग जोखिम:"),
+        ("### ⏱️ Lead Portfolio Manager — Asset Allocation & Holding Period Strategy for", "### ⏱️ लीड पोर्टफोलियो मैनेजर (Lead Portfolio Manager) — परिसंपत्ति आवंटन और होल्डिंग रणनीति:"),
+        ("### 📈 Senior Technical Analyst — Price Action & Momentum Thesis on", "### 📈 वरिष्ठ तकनीकी विश्लेषक (Senior Technical Analyst) — मूल्य एक्शन और मोमेंटम थीसिस:"),
+        ("### 📑 Senior Fundamental Analyst — Audited Valuation Rationale on", "### 📑 वरिष्ठ मौलिक विश्लेषक (Senior Fundamental Analyst) — ऑडिटेड मूल्यांकन तर्क:"),
+        ("### 🛡️ Chief Risk Officer — Capital Preservation & Invalidation Framework for", "### 🛡️ मुख्य जोखिम अधिकारी (Chief Risk Officer) — पूंजी संरक्षण और अमान्यीकरण ढांचा:"),
+        ("### 🚀 Bullish Research Strategist — Upside Catalyst Breakdown on", "### 🚀 तेजी अनुसंधान रणनीतिकार (Bullish Strategist) — तेजी उत्प्रेरक का विवरण:"),
+        ("### 🐻 Bearish Research Strategist — Downside Vulnerability Assessment on", "### 🐻 मंदी अनुसंधान रणनीतिकार (Bearish Strategist) — गिरावट संवेदनशीलता मूल्यांकन:"),
+        ("### 💼 Lead Portfolio Manager — Executive Directive Breakdown:", "### 💼 लीड पोर्टफोलियो मैनेजर (Lead Portfolio Manager) — कार्यकारी निर्देश विश्लेषण:"),
+        ("### 📊 Technical Indicator & Momentum Interrogation:", "### 📊 तकनीकी संकेतक और मोमेंटम विश्लेषण:"),
+        ("### 🎯 Critical Price Geometry & Pivot Levels for", "### 🎯 महत्वपूर्ण मूल्य ज्यामिति और पिवट स्तर:"),
+        ("### 🎯 Target Probability & Price Upside Dynamics for", "### 🎯 लक्ष्य संभावना और मूल्य वृद्धि गतिशीलता:"),
+        ("### 🛡️ Risk Management, Downside Targets & Stop-Loss Audit on", "### 🛡️ जोखिम प्रबंधन, गिरावट लक्ष्य और स्टॉप-लॉस ऑडिट:"),
+        ("### 📑 Fundamental Health, Valuation & Balance Sheet Analysis for", "### 📑 मौलिक स्वास्थ्य, मूल्यांकन और बैलेंस शीट विश्लेषण:"),
+        ("### 🚀 Bullish Catalyst & Growth Driver Breakdown for", "### 🚀 तेजी उत्प्रेरक और विकास चालक विश्लेषण:"),
+        ("### 🐻 Bearish Risks, Downside Threats & Valuation Skepticism on", "### 🐻 मंदी के जोखिम, गिरावट के खतरे और मूल्यांकन संशय:"),
+        ("### 📰 Verified Press, Media & Sentiment Breakdown on", "### 📰 सत्यापित समाचार, मीडिया और सेंटिमेंट विश्लेषण:"),
+        ("### 🎯 Tactical Trade Entry, Accumulation Zone & Execution Strategy for", "### 🎯 सामरिक ट्रेड प्रवेश, संचय क्षेत्र और निष्पादन रणनीति:"),
+        ("### 🏛️ Executive Research Consensus & Tactical Directive on", "### 🏛️ कार्यकारी अनुसंधान सहमति और सामरिक निर्देश:"),
+        ("Regarding your query:", "आपके प्रश्न के संदर्भ में:"),
+        ("Tactical Technical Horizon:", "सामरिक तकनीकी क्षितिज:"),
+        ("Trading Sessions", "ट्रेडिंग सत्र (Trading Sessions)"),
+        ("Weeks", "सप्ताह (Weeks)"),
+        ("ATR Drift Velocity & Statistical Target Reach:", "ATR बहाव गति और सांख्यिकीय लक्ष्य प्राप्ति:"),
+        ("Phase-by-Phase Holding Roadmap:", "चरण-दर-चरण होल्डिंग रोडमैप:"),
+        ("Strict Exit & De-Risking Protocol:", "सख्त निकास और जोखिम-मुक्ति प्रोटोकॉल:"),
+        ("Profit Booking:", "प्रॉफिट बुकिंग (Profit Booking):"),
+        ("Price Invalidation Stop:", "मूल्य अमान्यीकरण स्टॉप (Stop Loss):"),
+        ("Maximum Capital Exposure Window:", "अधिकतम पूंजी एक्सपोज़र विंडो:"),
+        ("Non-Negotiable Price Stop:", "गैर-परक्राम्य मूल्य स्टॉप (Stop Loss):"),
+        ("Position Sizing Discipline:", "स्थिति आकार (Position Sizing) अनुशासन:"),
+        ("Fundamental Holding Horizon:", "मौलिक होल्डिंग क्षितिज:"),
+        ("Quarterly Disclosure Cycle:", "तिमाही प्रकटीकरण चक्र:"),
+        ("Catalyst Realization Window:", "उत्प्रेरक (Catalyst) प्राप्ति विंडो:"),
+        ("Target Price Convergence:", "लक्ष्य मूल्य (Target Price) अभिसरण:"),
+        ("Bullish Holding Momentum:", "तेजी होल्डिंग गतिशीलता:"),
+        ("Fast-Track Breakout Potential:", "फास्ट-ट्रैक ब्रेकआउट क्षमता:"),
+        ("Growth Catalyst:", "विकास उत्प्रेरक (Growth Catalyst):"),
+        ("Hold Recommendation:", "होल्ड करने की सिफारिश:"),
+        ("Overhead Resistance Traps:", "ऊपरी प्रतिरोध (Resistance) जाल:"),
+        ("Time Risk:", "समय जोखिम (Time Risk):"),
+        ("Vulnerability Limit:", "संवेदनशीलता सीमा:"),
+        ("Recommended Institutional Holding Horizon:", "अनुशंसित संस्थागत होल्डिंग क्षितिज:"),
+        ("Short-Term Tactical Swing:", "अल्पकालिक सामरिक स्विंग:"),
+        ("Positional Fundamental Horizon:", "स्थितिगत मौलिक क्षितिज:"),
+        ("Portfolio Holding Strategy:", "पोर्टफोलियो होल्डिंग रणनीति:"),
+        ("Asymmetric Risk/Reward Execution:", "विषम Risk/Reward निष्पादन:"),
+        ("Capital Rotation Rules:", "पूंजी रोटेशन नियम:"),
+        ("Execution Guardrails:", "निष्पादन सुरक्षा दिशानिर्देश:"),
+        ("Current Traded Price:", "वर्तमान ट्रेड मूल्य (LTP):"),
+        ("Current Trading Valuation:", "वर्तमान ट्रेडिंग मूल्यांकन:"),
+        ("Risk Stance:", "जोखिम रुख:"),
+        ("Bull Case Target:", "बुल केस लक्ष्य (Target):"),
+        ("Bear Skeptic Stance:", "बेयर संशयवादी रुख:"),
+        ("Market Context:", "बाजार संदर्भ:"),
+        ("Multi-Agent Research Consensus:", "मल्टी-एजेंट अनुसंधान सहमति:"),
+        ("Asymmetric Risk/Reward Geometry:", "विषम Risk/Reward ज्यामिति:"),
+        ("Technical Alignment:", "तकनीकी संरेखण:"),
+        ("Fundamental Anchor:", "मौलिक आधार:"),
+        ("Primary Operational Catalyst:", "प्राथमिक परिचालन उत्प्रेरक:"),
+        ("Tactical Execution:", "सामरिक निष्पादन:"),
+        ("Overhead Resistance Gates:", "ऊपरी प्रतिरोध द्वार (Resistance):"),
+        ("Downside Support Floors:", "निचले सपोर्ट स्तर (Support):"),
+        ("Session & Annual Ranges:", "सत्र और वार्षिक श्रेणियां:"),
+        ("Day Range:", "दिन की सीमा (Day Range):"),
+        ("52-Week Range:", "52-सप्ताह की सीमा:"),
+        ("Recommended Entry Zone:", "अनुशंसित प्रवेश क्षेत्र (Entry Zone):"),
+        ("Hard Stop:", "हार्ड स्टॉप (Stop Loss):"),
+        ("Invalidation Trigger:", "अमान्यीकरण ट्रिगर:"),
+        ("Conviction Score:", "दृढ़ विश्वास (Conviction Score):"),
+        ("AI Conviction", "AI दृढ़ विश्वास"),
+        ("Volume:", "वॉल्यूम (Volume):"),
+        ("Distance:", "दूरी:"),
+        ("Daily ATR(14) Volatility:", "दैनिक ATR(14) अस्थिरता:"),
+    ]
+
+    res = text
+    for eng, hi in replacements:
+        res = res.replace(eng, hi)
+    return res
+
+
 class AIChatEngine:
     """Manages context-aware financial dialogue with specialized AI agent personas."""
 
@@ -207,6 +302,7 @@ class AIChatEngine:
         api_key: Optional[str] = None,
         provider: Optional[str] = None,
         model: Optional[str] = None,
+        language: Optional[str] = "en",
     ) -> Dict[str, Any]:
         """Generates an authoritative, factual, persona-aligned response."""
         persona_key = persona.lower() if persona.lower() in PERSONA_METADATA else "portfolio_manager"
@@ -238,6 +334,7 @@ class AIChatEngine:
                     api_key=api_key,
                     provider=provider,
                     model=model,
+                    language=language or "en",
                 )
                 if llm_res and llm_res.get("reply"):
                     llm_reply = llm_res["reply"]
@@ -249,6 +346,8 @@ class AIChatEngine:
 
         if not llm_reply:
             llm_reply = cls._deterministic_financial_reasoner(context, user_query, persona_key)
+            if language == "hi":
+                llm_reply = _translate_reasoner_output_to_hindi(llm_reply)
 
         sources_consulted = [
             f"NSE / BSE Real-time Tick: ₹{context['quote'].get('price', 'N/A')}",
@@ -280,9 +379,10 @@ class AIChatEngine:
         api_key: Optional[str] = None,
         provider: Optional[str] = None,
         model: Optional[str] = None,
+        language: str = "en",
     ) -> Optional[Dict[str, str]]:
         """Invokes configured LLM with strict financial grounding and persona specialization."""
-        system_prompt = cls._build_system_prompt(context, persona_key)
+        system_prompt = cls._build_system_prompt(context, persona_key, language=language)
 
         prov = (provider or "").lower().strip()
         if not prov:
@@ -433,7 +533,7 @@ class AIChatEngine:
         return None
 
     @classmethod
-    def _build_system_prompt(cls, context: Dict[str, Any], persona_key: str) -> str:
+    def _build_system_prompt(cls, context: Dict[str, Any], persona_key: str, language: str = "en") -> str:
         """Constructs an institutional system prompt with all verified stock metrics."""
         q = context["quote"]
         sym = context["symbol"]
@@ -503,6 +603,17 @@ VERIFIED FINANCIAL CONTEXT FOR {sym}:
 {chr(10).join(f"  * {art.get('title')} ({art.get('publisher')})" for art in context['news'][:5])}
 
 Answer the trader's query with authoritative depth, citing numbers, probability dynamics, and operational rationale."""
+
+        if language == "hi":
+            prompt += """
+
+MANDATORY LANGUAGE INSTRUCTION:
+You MUST formulate your complete response in natural, professional Hindi (हिंदी) in Devanagari script.
+CRITICAL CONSTRAINT: DO NOT convert technical financial terms, acronyms, or tickers into Hindi. Keep them in standard English / Latin script:
+- Technical indicators: RSI, MACD, EMA, SMA, ATR, Bollinger Bands, Pivot, S1, S2, R1, R2, Camarilla
+- Valuation metrics: P/E, PEG, P/B, ROE, ROA, Debt-to-Equity, EPS, EBITDA
+- Market and price terms: LTP, ₹, NSE, BSE, NIFTY 50, SENSEX, Target, Stop Loss, BUY, SELL, HOLD, Drawdown
+Explain all concepts, rationales, strategies, and nuances clearly in fluent Hindi while keeping those technical terms in English."""
         return prompt
 
     @classmethod

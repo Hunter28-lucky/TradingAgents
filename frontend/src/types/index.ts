@@ -347,6 +347,7 @@ export interface ChatRequest {
   api_key?: string;
   provider?: string;
   model?: string;
+  language?: string;
 }
 
 export interface ChatResponse {

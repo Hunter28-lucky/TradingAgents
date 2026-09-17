@@ -87,6 +87,7 @@ class ChatRequest(BaseModel):
     api_key: Optional[str] = None
     provider: Optional[str] = None
     model: Optional[str] = None
+    language: Optional[str] = "en"
 
 
 class KeyConfigRequest(BaseModel):
@@ -330,6 +331,7 @@ def chat_with_analysts(req: ChatRequest):
         api_key=req.api_key,
         provider=req.provider,
         model=req.model,
+        language=req.language or "en",
     )
     return result
 

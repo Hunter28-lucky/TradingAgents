@@ -2,17 +2,20 @@
 import React from 'react';
 import { AnalysisRecord } from '../types';
 import { ShieldAlert, ShieldCheck, AlertOctagon, TrendingDown, Target } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface RiskViewProps {
   analysis: AnalysisRecord | null;
 }
 
 export const RiskView: React.FC<RiskViewProps> = ({ analysis }) => {
+  const { t } = useLanguage();
+
   if (!analysis || !analysis.risk_analysis) {
     return (
       <div className="terminal-card" style={{ padding: '3rem', textAlign: 'center' }}>
         <div style={{ color: 'var(--text-muted)' }}>
-          Run an AI research analysis to inspect the multi-agent risk assessment for this symbol.
+          {t('risk.no_analysis', 'Run an AI research analysis to inspect the multi-agent risk assessment for this symbol.')}
         </div>
       </div>
     );
@@ -25,10 +28,10 @@ export const RiskView: React.FC<RiskViewProps> = ({ analysis }) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-            Institutional Risk Evaluation
+            {t('risk.title', 'Institutional Risk Evaluation')}
           </h2>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            Stress testing across market volatility, structural liquidity, and key pivot defenses.
+            {t('risk.sub', 'Stress testing across market volatility, structural liquidity, and key pivot defenses.')}
           </p>
         </div>
       </div>
@@ -36,7 +39,7 @@ export const RiskView: React.FC<RiskViewProps> = ({ analysis }) => {
       <div className="grid-3">
         <div className="terminal-card">
           <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-            Volatility Assessment
+            {t('risk.volatility_title', 'Volatility Assessment')}
           </div>
           <div style={{ fontSize: '1.3rem', fontWeight: 700, color: risk_analysis.volatility_risk === 'High' ? 'var(--color-bearish)' : 'var(--color-bullish)', marginTop: '4px' }}>
             {risk_analysis.volatility_risk} Volatility
@@ -48,7 +51,7 @@ export const RiskView: React.FC<RiskViewProps> = ({ analysis }) => {
 
         <div className="terminal-card">
           <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-            Liquidity Profile
+            {t('risk.liquidity_title', 'Liquidity Profile')}
           </div>
           <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--color-accent-cyan)', marginTop: '4px' }}>
             {risk_analysis.liquidity_risk}
@@ -60,13 +63,13 @@ export const RiskView: React.FC<RiskViewProps> = ({ analysis }) => {
 
         <div className="terminal-card">
           <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-            Benchmark Beta
+            {t('risk.beta_title', 'Benchmark Beta')}
           </div>
           <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '4px' }}>
             {risk_analysis.beta_to_market ? risk_analysis.beta_to_market.toFixed(2) : '1.00'}
           </div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', marginTop: '4px' }}>
-            Relative to NIFTY 50 Index
+            {t('risk.beta_sub', 'Relative to NIFTY 50 Index')}
           </div>
         </div>
       </div>
@@ -74,8 +77,9 @@ export const RiskView: React.FC<RiskViewProps> = ({ analysis }) => {
       {/* Critical Defense Levels & Stop-Loss */}
       <div className="terminal-card">
         <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-primary)' }}>
-          Critical Price Defense Levels & Downside Boundary
+          {t('risk.defense_levels', 'Critical Price Defense Levels & Downside Boundary')}
         </h3>
+
         <div className="grid-2">
           <div>
             <table className="terminal-table">

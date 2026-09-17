@@ -1,7 +1,8 @@
 // frontend/src/components/HistoryView.tsx
 import React from 'react';
 import { AnalysisRecord } from '../types';
-import { History, ArrowRight, Clock, Cpu } from 'lucide-react';
+import { History, ArrowRight } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface HistoryViewProps {
   analyses: AnalysisRecord[];
@@ -9,15 +10,17 @@ interface HistoryViewProps {
 }
 
 export const HistoryView: React.FC<HistoryViewProps> = ({ analyses, onSelectAnalysis }) => {
+  const { t, translateDirective, isHindi } = useLanguage();
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       <div>
         <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <History size={20} color="var(--color-accent-cyan)" />
-          Research Analysis Archive ({analyses.length})
+          {t('history.title', 'Research Analysis Archive')} ({analyses.length})
         </h2>
         <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-          Auditable archive of all autonomous multi-agent deliberations and structured research decisions.
+          {t('history.sub', 'Auditable archive of all autonomous multi-agent deliberations and structured research decisions.')}
         </p>
       </div>
 
@@ -25,21 +28,21 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ analyses, onSelectAnal
         <table className="terminal-table">
           <thead>
             <tr>
-              <th>Date & Time (IST)</th>
-              <th>Symbol & Company</th>
-              <th>Price At Analysis</th>
-              <th>AI Signal</th>
-              <th>Evidence Quality</th>
-              <th>Model / Provider</th>
-              <th>Duration</th>
-              <th style={{ textAlign: 'right' }}>Report</th>
+              <th>{t('history.col_time', 'Date & Time (IST)')}</th>
+              <th>{t('history.col_symbol', 'Symbol & Company')}</th>
+              <th>{t('history.col_price', 'Price At Analysis')}</th>
+              <th>{t('history.col_signal', 'AI Signal')}</th>
+              <th>{t('history.col_evidence', 'Evidence Quality')}</th>
+              <th>{t('history.col_model', 'Model / Provider')}</th>
+              <th>{t('history.col_duration', 'Duration')}</th>
+              <th style={{ textAlign: 'right' }}>{t('history.col_report', 'Report')}</th>
             </tr>
           </thead>
           <tbody>
             {analyses.length === 0 ? (
               <tr>
                 <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                  No historical analyses recorded yet.
+                  {t('history.empty', 'No historical analyses recorded yet.')}
                 </td>
               </tr>
             ) : (
@@ -75,7 +78,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ analyses, onSelectAnal
                           fontSize: '0.7rem',
                         }}
                       >
-                        {item.signal}
+                        {translateDirective(item.signal)}
                       </span>
                     </td>
                     <td>
@@ -98,7 +101,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ analyses, onSelectAnal
                           onSelectAnalysis(item);
                         }}
                       >
-                        Inspect <ArrowRight size={12} />
+                        {isHindi ? 'रिपोर्ट देखें' : 'Inspect'} <ArrowRight size={12} />
                       </button>
                     </td>
                   </tr>

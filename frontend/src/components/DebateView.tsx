@@ -2,17 +2,20 @@
 import React from 'react';
 import { AnalysisRecord } from '../types';
 import { TrendingUp, TrendingDown, CheckCircle2, AlertTriangle, Lightbulb, Target } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface DebateViewProps {
   analysis: AnalysisRecord | null;
 }
 
 export const DebateView: React.FC<DebateViewProps> = ({ analysis }) => {
+  const { t } = useLanguage();
+
   if (!analysis || !analysis.bull_case || !analysis.bear_case) {
     return (
       <div className="terminal-card" style={{ padding: '3rem', textAlign: 'center' }}>
         <div style={{ color: 'var(--text-muted)' }}>
-          Run an AI research analysis to generate the multi-agent Bull vs Bear debate for this symbol.
+          {t('debate.no_analysis', 'Run an AI research analysis to generate the multi-agent Bull vs Bear debate for this symbol.')}
         </div>
       </div>
     );
@@ -25,10 +28,10 @@ export const DebateView: React.FC<DebateViewProps> = ({ analysis }) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-            Structured Multi-Agent Debate Synthesis
+            {t('debate.title', 'Structured Multi-Agent Debate Synthesis')}
           </h2>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            Autonomous deliberation between Bull Researcher and Bear Researcher. No forced consensus.
+            {t('debate.sub', 'Autonomous deliberation between Bull Researcher and Bear Researcher. No forced consensus.')}
           </p>
         </div>
         <span className="pill pill-historical" style={{ fontSize: '0.72rem' }}>
@@ -48,14 +51,14 @@ export const DebateView: React.FC<DebateViewProps> = ({ analysis }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
             <TrendingUp size={20} color="var(--color-bullish)" />
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--color-bullish)' }}>
-              THE BULL CASE
+              {t('debate.bull_title', 'THE BULL CASE')}
             </h3>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
               <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px' }}>
-                Strongest Bullish Arguments
+                {t('debate.strongest_bull', 'Strongest Bullish Arguments')}
               </div>
               <ul style={{ listStyleType: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {bull_case.strongest_arguments?.map((arg, i) => (
@@ -69,7 +72,7 @@ export const DebateView: React.FC<DebateViewProps> = ({ analysis }) => {
 
             <div>
               <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px' }}>
-                Supporting Evidence
+                {t('debate.supporting_ev', 'Supporting Evidence')}
               </div>
               <ul style={{ listStyleType: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {bull_case.supporting_evidence?.map((ev, i) => (
@@ -83,7 +86,7 @@ export const DebateView: React.FC<DebateViewProps> = ({ analysis }) => {
 
             <div>
               <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px' }}>
-                Key Upside Catalysts
+                {t('debate.upside_catalysts', 'Key Upside Catalysts')}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {bull_case.catalysts?.map((cat, i) => (
@@ -97,7 +100,7 @@ export const DebateView: React.FC<DebateViewProps> = ({ analysis }) => {
             {bull_case.assumptions && bull_case.assumptions.length > 0 && (
               <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>
-                  Critical Assumptions
+                  {t('debate.assumptions', 'Critical Assumptions')}
                 </div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                   {bull_case.assumptions.join(' • ')}
@@ -118,14 +121,14 @@ export const DebateView: React.FC<DebateViewProps> = ({ analysis }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
             <TrendingDown size={20} color="var(--color-bearish)" />
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--color-bearish)' }}>
-              THE BEAR CASE
+              {t('debate.bear_title', 'THE BEAR CASE')}
             </h3>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
               <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px' }}>
-                Strongest Bearish Arguments
+                {t('debate.primary_risk', 'Primary Risk Arguments')}
               </div>
               <ul style={{ listStyleType: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {bear_case.strongest_arguments?.map((arg, i) => (
@@ -139,7 +142,7 @@ export const DebateView: React.FC<DebateViewProps> = ({ analysis }) => {
 
             <div>
               <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px' }}>
-                Supporting Evidence & Headwinds
+                {t('debate.supporting_ev', 'Supporting Evidence & Headwinds')}
               </div>
               <ul style={{ listStyleType: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {bear_case.supporting_evidence?.map((ev, i) => (
@@ -153,7 +156,7 @@ export const DebateView: React.FC<DebateViewProps> = ({ analysis }) => {
 
             <div>
               <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px' }}>
-                Downside Vulnerabilities
+                {t('debate.downside_drivers', 'Potential Downside Drivers')}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {bear_case.key_risks?.map((risk, i) => (
@@ -167,7 +170,7 @@ export const DebateView: React.FC<DebateViewProps> = ({ analysis }) => {
             {bear_case.invalidation_conditions && bear_case.invalidation_conditions.length > 0 && (
               <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>
-                  Thesis Invalidation Conditions
+                  {t('debate.invalidation_triggers', 'Thesis Invalidation Conditions')}
                 </div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                   {bear_case.invalidation_conditions.join(' • ')}
@@ -180,3 +183,4 @@ export const DebateView: React.FC<DebateViewProps> = ({ analysis }) => {
     </div>
   );
 };
+

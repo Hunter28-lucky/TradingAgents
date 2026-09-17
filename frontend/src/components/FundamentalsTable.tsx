@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Fundamentals } from '../types';
 import { Layers, ShieldCheck, DollarSign, ExternalLink } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface FundamentalsTableProps {
   fundamentals: Fundamentals | null;
@@ -9,6 +10,7 @@ interface FundamentalsTableProps {
 }
 
 export const FundamentalsTable: React.FC<FundamentalsTableProps> = ({ fundamentals, loading }) => {
+  const { t } = useLanguage();
   const [statementTab, setStatementTab] = useState<'income' | 'balance' | 'cashflow'>('income');
 
   if (loading) {
@@ -16,7 +18,7 @@ export const FundamentalsTable: React.FC<FundamentalsTableProps> = ({ fundamenta
       <div className="terminal-card" style={{ textAlign: 'center', padding: '3rem' }}>
         <Layers size={28} className="spin" color="var(--color-accent-cyan)" />
         <div style={{ marginTop: '1rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-          Retrieving audited financial statements and ratios...
+          {t('fund.loading', 'Retrieving audited financial statements and ratios...')}
         </div>
       </div>
     );
@@ -25,10 +27,11 @@ export const FundamentalsTable: React.FC<FundamentalsTableProps> = ({ fundamenta
   if (!fundamentals || !fundamentals.overview) {
     return (
       <div className="terminal-card" style={{ padding: '2rem', textAlign: 'center' }}>
-        <div style={{ color: 'var(--text-muted)' }}>Audited financials unavailable for this symbol.</div>
+        <div style={{ color: 'var(--text-muted)' }}>{t('fund.unavailable', 'Audited financials unavailable for this symbol.')}</div>
       </div>
     );
   }
+
 
   const { overview, key_ratios, income_statement, balance_sheet, cash_flow, provenance } = fundamentals;
 
@@ -72,19 +75,19 @@ export const FundamentalsTable: React.FC<FundamentalsTableProps> = ({ fundamenta
 
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.25rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
             <div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>MARKET CAP</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{t('fund.market_cap', 'MARKET CAP')}</div>
               <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
                 {formatCrores(overview.market_cap)}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>ENTERPRISE VALUE</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{t('fund.enterprise_value', 'ENTERPRISE VALUE')}</div>
               <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
                 {formatCrores(overview.enterprise_value)}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>CURRENCY</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{t('fund.currency', 'CURRENCY')}</div>
               <div style={{ fontWeight: 700, color: 'var(--text-cyan)', fontFamily: 'var(--font-mono)' }}>
                 {overview.currency || 'INR'}
               </div>
@@ -95,7 +98,7 @@ export const FundamentalsTable: React.FC<FundamentalsTableProps> = ({ fundamenta
         {/* Valuation & Capital Compounding Ratios */}
         <div className="terminal-card">
           <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-primary)' }}>
-            Audited Valuation & Profitability Ratios
+            {t('fund.ratios_title', 'Audited Valuation & Profitability Ratios')}
           </h3>
           <table className="terminal-table">
             <tbody>
@@ -151,23 +154,24 @@ export const FundamentalsTable: React.FC<FundamentalsTableProps> = ({ fundamenta
               onClick={() => setStatementTab('income')}
               style={{ background: statementTab === 'income' ? 'var(--color-accent-blue)' : undefined }}
             >
-              Income Statement
+              {t('fund.tab_income', 'Income Statement')}
             </button>
             <button
               className={`btn-secondary ${statementTab === 'balance' ? 'active' : ''}`}
               onClick={() => setStatementTab('balance')}
               style={{ background: statementTab === 'balance' ? 'var(--color-accent-blue)' : undefined }}
             >
-              Balance Sheet
+              {t('fund.tab_balance', 'Balance Sheet')}
             </button>
             <button
               className={`btn-secondary ${statementTab === 'cashflow' ? 'active' : ''}`}
               onClick={() => setStatementTab('cashflow')}
               style={{ background: statementTab === 'cashflow' ? 'var(--color-accent-blue)' : undefined }}
             >
-              Cash Flow
+              {t('fund.tab_cashflow', 'Cash Flow')}
             </button>
           </div>
+
 
           <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
             Values in ₹ Crores (Reported)

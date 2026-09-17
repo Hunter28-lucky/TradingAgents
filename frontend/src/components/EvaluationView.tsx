@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { EvaluationRecord } from '../types';
 import { BarChart3, RefreshCw, TrendingUp, TrendingDown, ShieldCheck, AlertCircle } from 'lucide-react';
 import { api } from '../api/client';
+import { useLanguage } from '../context/LanguageContext';
 
 interface EvaluationViewProps {
   evaluations: EvaluationRecord[];
@@ -10,6 +11,7 @@ interface EvaluationViewProps {
 }
 
 export const EvaluationView: React.FC<EvaluationViewProps> = ({ evaluations, onRefresh }) => {
+  const { t } = useLanguage();
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -30,26 +32,25 @@ export const EvaluationView: React.FC<EvaluationViewProps> = ({ evaluations, onR
         <div>
           <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <BarChart3 size={20} color="var(--color-accent-cyan)" />
-            AI Decision Tracking & Research Evaluation
+            {t('eval.title', 'AI Decision Tracking & Research Evaluation')}
           </h2>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-            Empirical validation: Comparing what the AI said vs what actually happened in the market.
+            {t('eval.sub', 'Empirical validation: Comparing what the AI said vs what actually happened in the market.')}
           </p>
         </div>
 
         <button className="btn-secondary" onClick={handleRefresh} disabled={refreshing}>
           <RefreshCw size={14} className={refreshing ? 'spin' : ''} />
-          Refresh Historical Outcomes
+          {t('eval.refresh', 'Refresh Historical Outcomes')}
         </button>
       </div>
 
       <div style={{ padding: '10px 14px', background: 'rgba(0, 240, 255, 0.06)', border: '1px solid var(--border-highlight)', borderRadius: '6px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-cyan)', fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase' }}>
-          <ShieldCheck size={14} /> Paper Evaluation Engine
+          <ShieldCheck size={14} /> {t('eval.paper_title', 'Paper Evaluation Engine')}
         </div>
         <p style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-          This evaluation system tracks post-analysis price trajectory against real verified market prints.
-          It does not execute broker trades or manage real capital. Zero historical results are altered.
+          {t('eval.paper_desc', 'This evaluation system tracks post-analysis price trajectory against real verified market prints. It does not execute broker trades or manage real capital. Zero historical results are altered.')}
         </p>
       </div>
 
@@ -57,24 +58,25 @@ export const EvaluationView: React.FC<EvaluationViewProps> = ({ evaluations, onR
         <table className="terminal-table">
           <thead>
             <tr>
-              <th>Symbol & Model</th>
-              <th>AI Signal</th>
-              <th>Price At Analysis</th>
-              <th>1-Day Return</th>
-              <th>5-Day Return</th>
-              <th>20-Day Return</th>
-              <th>Benchmark (NIFTY 50)</th>
-              <th>Alpha</th>
+              <th>{t('eval.col_symbol', 'Symbol & Model')}</th>
+              <th>{t('eval.col_signal', 'AI Signal')}</th>
+              <th>{t('eval.col_price', 'Price At Analysis')}</th>
+              <th>{t('eval.col_1d', '1-Day Return')}</th>
+              <th>{t('eval.col_5d', '5-Day Return')}</th>
+              <th>{t('eval.col_20d', '20-Day Return')}</th>
+              <th>{t('eval.col_benchmark', 'Benchmark (NIFTY 50)')}</th>
+              <th>{t('eval.col_alpha', 'Alpha')}</th>
             </tr>
           </thead>
           <tbody>
             {evaluations.length === 0 ? (
               <tr>
                 <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                  No historical analyses recorded yet. Run a research analysis on any Indian stock to initiate decision tracking.
+                  {t('eval.empty', 'No historical analyses recorded yet. Run a research analysis on any Indian stock to initiate decision tracking.')}
                 </td>
               </tr>
             ) : (
+
               evaluations.map((ev) => {
                 const signalColor =
                   ev.signal === 'BUY BIAS'

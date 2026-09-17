@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { WatchlistItem } from '../types';
 import { TrendingUp, TrendingDown, Trash2, Cpu, Plus, Star } from 'lucide-react';
 import { api } from '../api/client';
+import { useLanguage } from '../context/LanguageContext';
 
 interface WatchlistViewProps {
   watchlist: WatchlistItem[];
@@ -17,6 +18,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   onAnalyzeSymbol,
   onRefresh,
 }) => {
+  const { t, translateProvenance } = useLanguage();
   const [newSymbol, setNewSymbol] = useState('');
   const [adding, setAdding] = useState(false);
 
@@ -51,10 +53,10 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
         <div>
           <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Star size={20} color="var(--color-warning)" fill="var(--color-warning)" />
-            Indian Equities Watchlist ({watchlist.length})
+            {t('watchlist.title', 'Indian Equities Watchlist')} ({watchlist.length})
           </h2>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-            Real-time tracking of top NSE & BSE stocks with verified market quotes.
+            {t('watchlist.sub', 'Real-time tracking of top NSE & BSE stocks with verified market quotes.')}
           </p>
         </div>
 
@@ -62,7 +64,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '8px' }}>
           <input
             type="text"
-            placeholder="Add ticker (e.g. SBIN.NS)..."
+            placeholder={t('watchlist.add_placeholder', 'Add ticker (e.g. SBIN.NS)...')}
             value={newSymbol}
             onChange={(e) => setNewSymbol(e.target.value)}
             style={{
@@ -78,7 +80,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             }}
           />
           <button type="submit" className="btn-secondary" disabled={adding}>
-            <Plus size={14} /> Add
+            <Plus size={14} /> {t('watchlist.add_button', 'Add')}
           </button>
         </form>
       </div>
@@ -87,20 +89,20 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
         <table className="terminal-table">
           <thead>
             <tr>
-              <th>Symbol / Company</th>
-              <th>LTP</th>
-              <th>Change</th>
-              <th>Day Range</th>
-              <th>52W Range</th>
-              <th>Status & Freshness</th>
-              <th style={{ textAlign: 'right' }}>Actions</th>
+              <th>{t('watchlist.col_symbol', 'Symbol / Company')}</th>
+              <th>{t('watchlist.col_ltp', 'LTP')}</th>
+              <th>{t('watchlist.col_change', 'Change')}</th>
+              <th>{t('watchlist.col_day_range', 'Day Range')}</th>
+              <th>{t('watchlist.col_52w_range', '52W Range')}</th>
+              <th>{t('watchlist.col_status', 'Status & Freshness')}</th>
+              <th style={{ textAlign: 'right' }}>{t('watchlist.col_actions', 'Actions')}</th>
             </tr>
           </thead>
           <tbody>
             {watchlist.length === 0 ? (
               <tr>
                 <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                  No stocks in watchlist. Add a stock using the input above.
+                  {t('watchlist.empty', 'No symbols in your watchlist. Add one above to track in real-time.')}
                 </td>
               </tr>
             ) : (
@@ -114,26 +116,30 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   >
                     <td>
                       <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{item.symbol}</div>
-                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{item.company_name}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{item.company_name}</div>
                     </td>
-                    <td style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
-                      {item.price ? `₹${item.price.toLocaleString('en-IN')}` : 'N/A'}
+                    <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                      ₹{item.price?.toFixed(2) || 'N/A'}
                     </td>
-                    <td style={{ color: isPos ? 'var(--color-bullish)' : 'var(--color-bearish)', fontWeight: 600 }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
-                        {isPos ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                        {item.change_percent ? `${isPos ? '+' : ''}${item.change_percent.toFixed(2)}%` : '0.00%'}
-                      </span>
+                    <td
+                      style={{
+                        color: isPos ? 'var(--color-bullish)' : 'var(--color-bearish)',
+                        fontWeight: 600,
+                        fontFamily: 'var(--font-mono)',
+                      }}
+                    >
+                      {item.change ? `${isPos ? '+' : ''}${item.change.toFixed(2)}` : '0.00'}{' '}
+                      ({item.change_percent ? `${isPos ? '+' : ''}${item.change_percent.toFixed(2)}%` : '0.00%'})
                     </td>
-                    <td style={{ fontSize: '0.78rem' }}>
-                      ₹{item.day_low ?? 'N/A'} - ₹{item.day_high ?? 'N/A'}
+                    <td style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}>
+                      ₹{item.day_low?.toFixed(1) || '—'} - ₹{item.day_high?.toFixed(1) || '—'}
                     </td>
-                    <td style={{ fontSize: '0.78rem' }}>
-                      ₹{item.week_52_low ?? 'N/A'} - ₹{item.week_52_high ?? 'N/A'}
+                    <td style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}>
+                      ₹{item.week_52_low?.toFixed(1) || '—'} - ₹{item.week_52_high?.toFixed(1) || '—'}
                     </td>
                     <td>
                       <span className={`pill ${item.status === 'LIVE' ? 'pill-live' : 'pill-historical'}`} style={{ fontSize: '0.66rem' }}>
-                        {item.status}
+                        {translateProvenance(item.status)}
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
@@ -147,7 +153,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                           }}
                           title="Run Multi-Agent Research Analysis"
                         >
-                          <Cpu size={12} /> Analyze
+                          <Cpu size={12} /> {t('watchlist.action_analyze', 'Analyze')}
                         </button>
                         <button
                           onClick={(e) => handleRemove(item.symbol, e)}

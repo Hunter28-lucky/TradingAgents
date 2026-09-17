@@ -2,6 +2,7 @@
 import React from 'react';
 import { SentimentData } from '../types';
 import { MessageSquare, ShieldAlert, CheckCircle, BarChart } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface SentimentViewProps {
   sentiment: SentimentData | null;
@@ -9,12 +10,14 @@ interface SentimentViewProps {
 }
 
 export const SentimentView: React.FC<SentimentViewProps> = ({ sentiment, loading }) => {
+  const { t } = useLanguage();
+
   if (loading) {
     return (
       <div className="terminal-card" style={{ textAlign: 'center', padding: '3rem' }}>
         <MessageSquare size={28} className="spin" color="var(--color-accent-cyan)" />
         <div style={{ marginTop: '1rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-          Aggregating and analyzing media tone...
+          {t('sentiment.loading', 'Aggregating and analyzing media tone...')}
         </div>
       </div>
     );
@@ -23,7 +26,7 @@ export const SentimentView: React.FC<SentimentViewProps> = ({ sentiment, loading
   if (!sentiment) {
     return (
       <div className="terminal-card" style={{ padding: '2rem', textAlign: 'center' }}>
-        <div style={{ color: 'var(--text-muted)' }}>Sentiment data unavailable for this symbol.</div>
+        <div style={{ color: 'var(--text-muted)' }}>{t('sentiment.unavailable', 'Sentiment data unavailable for this symbol.')}</div>
       </div>
     );
   }
@@ -46,7 +49,7 @@ export const SentimentView: React.FC<SentimentViewProps> = ({ sentiment, loading
       >
         <div>
           <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-            Aggregated Public Sentiment
+            {t('sentiment.title', 'Aggregated Public Sentiment')}
           </div>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: badgeColor, fontFamily: 'var(--font-display)', marginTop: '2px' }}>
             {sentiment.label}
@@ -57,17 +60,18 @@ export const SentimentView: React.FC<SentimentViewProps> = ({ sentiment, loading
         </div>
 
         <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
-          <div>Sample Size: <strong style={{ color: 'var(--text-primary)' }}>{sentiment.sample_size} articles</strong></div>
-          <div style={{ marginTop: '4px' }}>Window: <strong style={{ color: 'var(--text-cyan)' }}>{sentiment.time_window}</strong></div>
-          <div style={{ marginTop: '4px' }}>Confidence: <strong style={{ color: sentiment.confidence === 'HIGH' ? 'var(--color-bullish)' : 'var(--color-warning)' }}>{sentiment.confidence}</strong></div>
+          <div>{t('sentiment.sample_size', 'Sample Size')}: <strong style={{ color: 'var(--text-primary)' }}>{sentiment.sample_size} articles</strong></div>
+          <div style={{ marginTop: '4px' }}>{t('sentiment.window', 'Window')}: <strong style={{ color: 'var(--text-cyan)' }}>{sentiment.time_window}</strong></div>
+          <div style={{ marginTop: '4px' }}>{t('sentiment.confidence', 'Confidence')}: <strong style={{ color: sentiment.confidence === 'HIGH' ? 'var(--color-bullish)' : 'var(--color-warning)' }}>{sentiment.confidence}</strong></div>
         </div>
       </div>
 
       {/* Details & Sample Breakdown */}
       <div className="terminal-card">
         <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-primary)' }}>
-          Sample & Source Provenance
+          {t('sentiment.provenance_title', 'Sample & Source Provenance')}
         </h3>
+
 
         {sentiment.sample_size < 3 ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--color-warning)' }}>

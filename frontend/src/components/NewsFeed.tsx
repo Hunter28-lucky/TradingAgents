@@ -2,6 +2,7 @@
 import React from 'react';
 import { NewsArticle } from '../types';
 import { Newspaper, ExternalLink, Calendar, ShieldCheck } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface NewsFeedProps {
   articles: NewsArticle[];
@@ -9,12 +10,14 @@ interface NewsFeedProps {
 }
 
 export const NewsFeed: React.FC<NewsFeedProps> = ({ articles, loading }) => {
+  const { t } = useLanguage();
+
   if (loading) {
     return (
       <div className="terminal-card" style={{ textAlign: 'center', padding: '3rem' }}>
         <Newspaper size={28} className="spin" color="var(--color-accent-cyan)" />
         <div style={{ marginTop: '1rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-          Aggregating verified press articles...
+          {t('news.loading', 'Aggregating verified press articles...')}
         </div>
       </div>
     );
@@ -23,7 +26,7 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ articles, loading }) => {
   if (!articles || articles.length === 0) {
     return (
       <div className="terminal-card" style={{ padding: '2rem', textAlign: 'center' }}>
-        <div style={{ color: 'var(--text-muted)' }}>No recent verified news articles found for this symbol.</div>
+        <div style={{ color: 'var(--text-muted)' }}>{t('news.empty', 'No recent verified news articles found for this symbol.')}</div>
       </div>
     );
   }
@@ -32,12 +35,13 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ articles, loading }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-          Verified Financial Press ({articles.length} Articles)
+          {t('news.title', 'Verified Financial Press')} ({articles.length} Articles)
         </div>
         <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-cyan)' }}>
-          Rule: Real Sources Only — No Fabricated Articles
+          {t('news.rule', 'Rule: Real Sources Only — No Fabricated Articles')}
         </div>
       </div>
+
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {articles.map((art, idx) => (

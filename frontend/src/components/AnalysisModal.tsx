@@ -1,6 +1,7 @@
 // frontend/src/components/AnalysisModal.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Cpu, CheckCircle2, Circle, AlertCircle, X, ArrowRight, Clock } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface AnalysisModalProps {
   jobId: string;
@@ -9,7 +10,7 @@ interface AnalysisModalProps {
   onComplete: (analysisId: string) => void;
 }
 
-const STEPS = [
+const STEPS_EN = [
   'Market Data Retrieval',
   'OHLCV Time Series',
   'Technical Analysis Engine',
@@ -27,7 +28,26 @@ const STEPS = [
   'Portfolio Manager Decision',
 ];
 
+const STEPS_HI = [
+  'मार्केट डेटा पुनर्प्राप्ति',
+  'OHLCV टाइम सीरीज',
+  'तकनीकी विश्लेषण इंजन',
+  'फंडामेंटल वित्तीय डेटा',
+  'समाचार एग्रीगेटर',
+  'सेंटिमेंट विश्लेषण',
+  'तकनीकी विश्लेषक नोड',
+  'फंडामेंटल विश्लेषक नोड',
+  'समाचार विश्लेषक नोड',
+  'सेंटिमेंट विश्लेषक नोड',
+  'बुल शोधकर्ता (Bull Researcher)',
+  'बेयर शोधकर्ता (Bear Researcher)',
+  'बहस और ट्रेडर संश्लेषण',
+  'जोखिम प्रबंधन (Risk Management)',
+  'पोर्टफोलियो मैनेजर निर्णय',
+];
+
 export const AnalysisModal: React.FC<AnalysisModalProps> = ({ jobId, symbol, onClose, onComplete }) => {
+  const { isHindi } = useLanguage();
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [stepTitle, setStepTitle] = useState<string>('Initializing multi-agent pipeline...');
   const [messages, setMessages] = useState<string[]>([]);
@@ -81,6 +101,8 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({ jobId, symbol, onC
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const stepsList = isHindi ? STEPS_HI : STEPS_EN;
+
   return (
     <div className="modal-overlay">
       <div className="modal-dialog">
@@ -89,7 +111,7 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({ jobId, symbol, onC
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Cpu size={20} color="var(--color-accent-cyan)" />
             <span style={{ fontWeight: 700, fontFamily: 'var(--font-display)', fontSize: '1.1rem' }}>
-              Autonomous Multi-Agent Deliberation: {symbol}
+              {isHindi ? `स्वायत्त मल्टी-एजेंट विचार-विमर्श: ${symbol}` : `Autonomous Multi-Agent Deliberation: ${symbol}`}
             </span>
           </div>
 
@@ -110,10 +132,10 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({ jobId, symbol, onC
           {/* Left: 15-Step Progress List */}
           <div style={{ borderRight: '1px solid var(--border-subtle)', padding: '1rem', overflowY: 'auto', background: 'rgba(0, 0, 0, 0.2)' }}>
             <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginBottom: '0.75rem' }}>
-              Execution Stages ({currentStep}/15)
+              {isHindi ? `निष्पादन चरण (${currentStep}/15)` : `Execution Stages (${currentStep}/15)`}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {STEPS.map((stepName, i) => {
+              {stepsList.map((stepName, i) => {
                 const stepNum = i + 1;
                 const isDone = stepNum < currentStep || status === 'COMPLETED';
                 const isCurrent = stepNum === currentStep && status === 'RUNNING';
@@ -150,7 +172,7 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({ jobId, symbol, onC
           {/* Right: Live Terminal Log Stream */}
           <div style={{ display: 'flex', flexDirection: 'column', padding: '1rem 1.25rem', overflow: 'hidden', background: '#090c13' }}>
             <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-cyan)', marginBottom: '0.5rem', fontWeight: 600 }}>
-              &gt; LIVE REASONING LOG
+              {isHindi ? '> लाइव रीजनिंग लॉग' : '> LIVE REASONING LOG'}
             </div>
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}>
               {messages.map((msg, i) => (
@@ -172,7 +194,12 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({ jobId, symbol, onC
         {/* Footer */}
         <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            Status: <strong style={{ color: status === 'COMPLETED' ? 'var(--color-bullish)' : status === 'FAILED' ? 'var(--color-bearish)' : 'var(--color-accent-cyan)' }}>{status}</strong>
+            {isHindi ? 'स्थिति: ' : 'Status: '}
+            <strong style={{ color: status === 'COMPLETED' ? 'var(--color-bullish)' : status === 'FAILED' ? 'var(--color-bearish)' : 'var(--color-accent-cyan)' }}>
+              {isHindi
+                ? (status === 'COMPLETED' ? 'पूर्ण (COMPLETED)' : status === 'FAILED' ? 'विफल (FAILED)' : 'जारी है (RUNNING)')
+                : status}
+            </strong>
           </div>
 
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -184,15 +211,15 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({ jobId, symbol, onC
                   onClose();
                 }}
               >
-                Inspect Research Report <ArrowRight size={14} />
+                {isHindi ? 'शोध रिपोर्ट देखें' : 'Inspect Research Report'} <ArrowRight size={14} />
               </button>
             ) : status === 'FAILED' ? (
               <button className="btn-secondary" onClick={onClose}>
-                Close
+                {isHindi ? 'बंद करें' : 'Close'}
               </button>
             ) : (
               <div style={{ fontSize: '0.78rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                Processing multi-agent graph nodes...
+                {isHindi ? 'मल्टी-एजेंट ग्राफ नोड्स संसाधित हो रहे हैं...' : 'Processing multi-agent graph nodes...'}
               </div>
             )}
           </div>

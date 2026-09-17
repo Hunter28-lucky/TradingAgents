@@ -27,10 +27,13 @@ import {
   ShieldCheck,
   Cpu,
 } from 'lucide-react';
+import { useLanguage } from './context/LanguageContext';
+
 
 type NavView = 'dashboard' | 'research' | 'watchlist' | 'evaluations' | 'history' | 'sources';
 
 export const App: React.FC = () => {
+  const { t, translateProvenance } = useLanguage();
   const [activeNav, setActiveNav] = useState<NavView>('dashboard');
   const [selectedSymbol, setSelectedSymbol] = useState<string>('RELIANCE.NS');
   const [overview, setOverview] = useState<MarketOverview | null>(null);
@@ -121,37 +124,37 @@ export const App: React.FC = () => {
           className={`nav-tab ${activeNav === 'dashboard' ? 'active' : ''}`}
           onClick={() => setActiveNav('dashboard')}
         >
-          <LayoutDashboard size={16} /> Market Dashboard
+          <LayoutDashboard size={16} /> {t('nav.dashboard', 'Market Dashboard')}
         </button>
         <button
           className={`nav-tab ${activeNav === 'research' ? 'active' : ''}`}
           onClick={() => setActiveNav('research')}
         >
-          <Search size={16} /> Stock Research ({selectedSymbol})
+          <Search size={16} /> {t('nav.research', 'Stock Research')} ({selectedSymbol})
         </button>
         <button
           className={`nav-tab ${activeNav === 'watchlist' ? 'active' : ''}`}
           onClick={() => setActiveNav('watchlist')}
         >
-          <Star size={16} /> Watchlist ({watchlist.length})
+          <Star size={16} /> {t('nav.watchlist', 'Watchlist')} ({watchlist.length})
         </button>
         <button
           className={`nav-tab ${activeNav === 'evaluations' ? 'active' : ''}`}
           onClick={() => setActiveNav('evaluations')}
         >
-          <BarChart3 size={16} /> AI Decision Tracking ({evaluations.length})
+          <BarChart3 size={16} /> {t('nav.evaluations', 'AI Decision Tracking')} ({evaluations.length})
         </button>
         <button
           className={`nav-tab ${activeNav === 'history' ? 'active' : ''}`}
           onClick={() => setActiveNav('history')}
         >
-          <History size={16} /> Analysis Archive ({analyses.length})
+          <History size={16} /> {t('nav.history', 'Analysis Archive')} ({analyses.length})
         </button>
         <button
           className={`nav-tab ${activeNav === 'sources' ? 'active' : ''}`}
           onClick={() => setActiveNav('sources')}
         >
-          <Database size={16} /> Data Sources & Infrastructure
+          <Database size={16} /> {t('nav.sources', 'Data Sources & Infrastructure')}
         </button>
       </nav>
 
@@ -163,10 +166,10 @@ export const App: React.FC = () => {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                 <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  Indian Benchmark Indices
+                  {t('dashboard.indices_title', 'Indian Benchmark Indices')}
                 </h2>
                 <span className="pill pill-historical" style={{ fontSize: '0.72rem' }}>
-                  NSE / BSE Official
+                  {t('dashboard.official_badge', 'NSE / BSE Official')}
                 </span>
               </div>
 
@@ -183,9 +186,10 @@ export const App: React.FC = () => {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{idx.name}</span>
                         <span className={`pill ${idx.provenance.status === 'LIVE' ? 'pill-live' : 'pill-historical'}`} style={{ fontSize: '0.65rem' }}>
-                          {idx.provenance.status}
+                          {translateProvenance(idx.provenance.status)}
                         </span>
                       </div>
+
 
                       <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', marginTop: '0.5rem' }}>
                         {idx.price ? `₹${idx.price.toLocaleString('en-IN')}` : 'N/A'}
