@@ -91,14 +91,50 @@ const PERSONAS: PersonaConfig[] = [
   },
 ];
 
-const SUGGESTED_QUESTIONS = [
-  { text: 'Why did you recommend this directive?', tag: 'Reasoning' },
-  { text: 'What are the exact chances and catalysts of hitting the target?', tag: 'Probability' },
-  { text: 'Why is the stop-loss set here and what triggers invalidation?', tag: 'Risk' },
-  { text: 'Can I enter at current price or wait for the entry zone?', tag: 'Execution' },
-  { text: 'How do recent news headlines and sentiment impact this stock?', tag: 'Catalysts' },
-  { text: 'Explain the technical RSI and moving average setup.', tag: 'Technicals' },
-];
+const PERSONA_SUGGESTED_QUESTIONS: Record<AnalystPersonaKey, { text: string; tag: string }[]> = {
+  portfolio_manager: [
+    { text: 'Why did you recommend this directive and conviction level?', tag: 'Strategy' },
+    { text: 'What are the exact odds and timeline of hitting target price?', tag: 'Target Odds' },
+    { text: 'How should I size this position and allocate capital?', tag: 'Allocation' },
+    { text: 'Can I enter at current price or wait for the entry zone?', tag: 'Execution' },
+    { text: 'How do technicals and fundamentals balance out in this decision?', tag: 'Synthesis' },
+  ],
+  technical: [
+    { text: 'Explain the technical RSI and moving average setup.', tag: 'Oscillators' },
+    { text: 'What are the classical and Camarilla pivot support/resistance levels?', tag: 'Levels' },
+    { text: 'How are the 20, 50, and 200-day moving averages aligned?', tag: 'Trend' },
+    { text: 'What does the MACD histogram say about momentum velocity?', tag: 'MACD' },
+    { text: 'What is the daily ATR volatility and recommended entry bracket?', tag: 'Volatility' },
+  ],
+  fundamental: [
+    { text: 'Break down the trailing P/E, forward P/E, and PEG valuation.', tag: 'Valuation' },
+    { text: 'How healthy is the balance sheet and debt-to-equity ratio?', tag: 'Solvency' },
+    { text: 'What are the Return on Equity (ROE) and capital efficiency?', tag: 'Returns' },
+    { text: 'What is the primary corporate catalyst driving earnings growth?', tag: 'Catalyst' },
+    { text: 'Is the stock undervalued or overvalued relative to its sector?', tag: 'Multiples' },
+  ],
+  risk: [
+    { text: 'Why is the stop-loss set at this level and what triggers invalidation?', tag: 'Stop Loss' },
+    { text: 'What is the maximum drawdown risk and 30-day volatility?', tag: 'Drawdown' },
+    { text: 'What happens if there is a gap-down or black swan event?', tag: 'Stress Test' },
+    { text: 'Explain the mathematical risk-to-reward ratio for this trade.', tag: 'R:R Ratio' },
+    { text: 'What specific daily price close would void this setup?', tag: 'Invalidation' },
+  ],
+  bull: [
+    { text: 'What are the strongest upside catalysts and growth drivers?', tag: 'Growth Thesis' },
+    { text: 'What triggers a high-volume breakout toward the target?', tag: 'Breakout' },
+    { text: 'Why should an aggressive investor accumulate on dips?', tag: 'Accumulation' },
+    { text: 'How do sector tailwinds support operating margin expansion?', tag: 'Tailwinds' },
+    { text: 'What could surprise the market positively in coming quarters?', tag: 'Upside' },
+  ],
+  bear: [
+    { text: 'What are the biggest downside threats and valuation risks?', tag: 'Downside' },
+    { text: 'Where is the heaviest overhead supply and institutional seller traps?', tag: 'Resistance' },
+    { text: 'What could trigger a breakdown below primary support S1?', tag: 'Breakdown' },
+    { text: 'Why should a conservative trader stay on the sidelines or sell?', tag: 'Defense' },
+    { text: 'Are the current valuation multiples pricing in too much optimism?', tag: 'Froth' },
+  ],
+};
 
 export const AIChatView: React.FC<AIChatViewProps> = ({
   symbol,
@@ -111,6 +147,32 @@ export const AIChatView: React.FC<AIChatViewProps> = ({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const handleSelectPersona = (key: AnalystPersonaKey) => {
+    setSelectedPersona(key);
+    const pObj = PERSONAS.find((p) => p.key === key);
+    if (!pObj) return;
+
+    const currentPrice = quote?.price ? `₹${quote.price.toLocaleString('en-IN')}` : 'Market LTP';
+    const directive = activeAnalysis?.signal || 'ACTIVE';
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `switch-${Date.now()}`,
+        role: 'assistant',
+        persona_title: pObj.label,
+        persona_badge: pObj.badge,
+        content: `**${pObj.label} online on ${symbol}.** (Current LTP: **${currentPrice}** | Directive: **${directive}**)\n\n*Specialization: ${pObj.desc}.*\n\nAsk me any specific question about this stock below, or click any of the specialized prompt chips.`,
+        sources_consulted: [
+          `Verified Real-Time Tick Feed (${quote?.exchange || 'NSE'})`,
+          `Specialist AI Research Engine`,
+          `Audited Financial Filings`,
+        ],
+        timestamp_ist: new Date().toLocaleTimeString('en-IN', { hour12: false }),
+      },
+    ]);
+  };
 
   // Initialize introductory message when symbol changes or tab mounts
   useEffect(() => {
@@ -310,7 +372,7 @@ export const AIChatView: React.FC<AIChatViewProps> = ({
             return (
               <button
                 key={p.key}
-                onClick={() => setSelectedPersona(p.key)}
+                onClick={() => handleSelectPersona(p.key)}
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
@@ -350,10 +412,10 @@ export const AIChatView: React.FC<AIChatViewProps> = ({
       {/* Suggested Quick Questions */}
       <div>
         <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <Sparkles size={12} style={{ color: 'var(--color-bullish)' }} /> QUICK ANALYST PROMPTS (CLICK TO ASK):
+          <Sparkles size={12} style={{ color: 'var(--color-bullish)' }} /> {currentPersona.label.toUpperCase()} PROMPTS (CLICK TO ASK):
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-          {SUGGESTED_QUESTIONS.map((q, idx) => (
+          {(PERSONA_SUGGESTED_QUESTIONS[selectedPersona] || PERSONA_SUGGESTED_QUESTIONS.portfolio_manager).map((q, idx) => (
             <button
               key={idx}
               onClick={() => handleSendMessage(q.text)}

@@ -76,6 +76,54 @@ def test_chat_risk_manager():
     assert "stop" in data["reply"].lower()
 
 
+def test_chat_fundamental_analyst():
+    """Verify fundamental analyst persona focuses on valuation, P/E, and balance sheet."""
+    req = {
+        "symbol": "RELIANCE.NS",
+        "persona": "fundamental",
+        "messages": [
+            {"role": "user", "content": "Explain the balance sheet debt and P/E valuation multiples."}
+        ],
+    }
+    resp = client.post("/api/chat", json=req)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["persona"] == "fundamental"
+    assert "P/E" in data["reply"] or "Debt" in data["reply"]
+
+
+def test_chat_bull_strategist():
+    """Verify bull researcher focuses on upside thesis and growth catalysts."""
+    req = {
+        "symbol": "RELIANCE.NS",
+        "persona": "bull",
+        "messages": [
+            {"role": "user", "content": "What are the strongest upside catalysts?"}
+        ],
+    }
+    resp = client.post("/api/chat", json=req)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["persona"] == "bull"
+    assert "Bull" in data["reply"] or "Upside" in data["reply"] or "Catalyst" in data["reply"]
+
+
+def test_chat_bear_strategist():
+    """Verify bear researcher focuses on downside risks and overhead resistance."""
+    req = {
+        "symbol": "RELIANCE.NS",
+        "persona": "bear",
+        "messages": [
+            {"role": "user", "content": "What are the biggest risks and overhead supply?"}
+        ],
+    }
+    resp = client.post("/api/chat", json=req)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["persona"] == "bear"
+    assert "Bear" in data["reply"] or "Downside" in data["reply"] or "Risk" in data["reply"]
+
+
 def test_chat_invalid_ticker_rejected():
     """Verify strict ticker regex rejects malicious payloads."""
     req = {
@@ -85,3 +133,4 @@ def test_chat_invalid_ticker_rejected():
     }
     resp = client.post("/api/chat", json=req)
     assert resp.status_code == 400
+
